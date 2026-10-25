@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>强心手册</title>
+<style>
+:root{color-scheme:light;--bg:#faf7f2;--card:#fff;--fg:#222;--mute:#777;--acc:#c0504d;--ok:#2f7d5b;--warn:#d68910;--line:#0001}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:20px/1.55 -apple-system,"PingFang SC",system-ui,sans-serif;padding-bottom:3rem}
+main{max-width:640px;margin:0 auto;padding:0 .9rem}
+h1{font-size:1.5rem;margin:1rem 0 .2rem}
+h2{font-size:1.2rem;margin:.2rem 0 .6rem}
+.card{background:var(--card);border-radius:1rem;padding:1rem 1.1rem;margin:.9rem 0;box-shadow:0 1px 4px #0001}
+.mute{color:var(--mute);font-size:.9rem}
+.big{font-size:1.3rem;font-weight:700}
+.tag{display:inline-block;padding:.15rem .7rem;border-radius:1rem;font-size:.95rem;font-weight:700;color:#fff;background:var(--acc)}
+.tag.walk{background:var(--ok)}.tag.rest{background:#7a7a9a}
+button{font:inherit;font-weight:700;border:0;border-radius:.8rem;padding:.75rem 1rem;margin:.3rem 0;width:100%;background:#eee;color:#222}
+button.pri{background:var(--acc);color:#fff}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.opts button{margin:0}
+.opts button.on{outline:3px solid var(--acc);background:#fbe9e7}
+.ex{border-top:1px solid var(--line);padding:.7rem 0}
+.ex:first-child{border-top:0}
+.ex label{display:flex;gap:.7rem;align-items:flex-start}
+.ex input{width:1.6rem;height:1.6rem;margin-top:.2rem;flex:none}
+.ex b{font-size:1.1rem}
+.how{font-size:.9rem;color:#555;margin-top:.2rem}
+svg.anim{display:block;width:100%;max-width:320px;margin:.4rem auto 0;background:#f6f1ea;border-radius:.7rem}
+.anim .body,.anim .far{fill:none;stroke:#c0504d;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.anim .far{stroke:#e3a9a7}
+.anim .head{fill:#c0504d}
+.anim .floor{stroke:#bbb;stroke-width:2}
+.anim .prop{fill:none;stroke:#8a7b6b;stroke-width:4;stroke-linecap:round}
+.anim .wallr{fill:#ddd3c5}
+.anim .band{stroke:#2f7d5b;stroke-width:3}
+.anim .belly{fill:#f2c7c5}
+.tm{margin:.6rem 0 .2rem;padding:.6rem .8rem;border-radius:.8rem;background:#f3efe8;text-align:center}
+.tm.on{background:#fbe9e7}
+.tmv{font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+.tmcue{min-height:1.4em;color:#555;font-size:1rem}
+.tmbtns{display:grid;grid-template-columns:2fr 1fr;gap:.5rem}
+.tmbtns button{margin:.3rem 0 0;padding:.6rem}
+.tmgo{background:var(--acc)!important;color:#fff!important}
+.anim .cue{font-size:16px;fill:#555;text-anchor:middle;font-weight:700}
+.alert{background:#fdecea;border-left:6px solid var(--acc);padding:.8rem 1rem;border-radius:.6rem;margin:.6rem 0}
+.good{background:#e8f5ee;border-left:6px solid var(--ok);padding:.8rem 1rem;border-radius:.6rem;margin:.6rem 0}
+.lv{display:flex;gap:.25rem;margin:.4rem 0}
+.lv span{flex:1;height:.7rem;border-radius:.3rem;background:#e5e0d8}
+.lv span.on{background:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+td,th{padding:.35rem .2rem;border-bottom:1px solid var(--line);text-align:left}
+textarea,input[type=number]{font:inherit;width:100%;padding:.5rem;border-radius:.5rem;border:1px solid #ccc}
+.hide{display:none}
+details summary{font-weight:700;cursor:pointer}
+</style></head><body><main>
+<h1>强心手册</h1>
+<div class="mute" id="today"></div>
+
+<div class="card">
+  <div>当前等级 <span class="big" id="lvNum"></span> / 10</div>
+  <div class="lv" id="lvBar"></div>
+  <div class="mute" id="lvNote"></div>
+</div>
+
+<!-- 第一步：练前自查 -->
+<div class="card" id="step1">
+  <h2>① 练之前先问自己</h2>
+  <div>昨晚睡得怎么样？</div>
+  <div class="opts" data-q="sleep">
+    <button data-v="good">睡得好</button><button data-v="ok">一般</button>
+    <button data-v="bad">没睡好</button><button data-v="pill">吃了安定才睡</button>
+  </div>
+  <div style="margin-top:.8rem">现在胸口感觉？</div>
+  <div class="opts" data-q="chest">
+    <button data-v="none">很松快</button><button data-v="mild">有点紧</button>
+    <button data-v="strong" style="grid-column:1/-1">明显发紧、心慌</button>
+  </div>
+  <button class="pri" id="go" style="margin-top:1rem">看今天练什么</button>
+</div>
+
+<!-- 第二步：今天的计划 -->
+<div class="card hide" id="step2">
+  <h2>② 今天练这些 <span id="dayTag" class="tag"></span></h2>
+  <div id="dayMsg"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem"><button id="voiceBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button><button id="musicBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button></div>
+  <div id="exList"></div>
+  <div class="mute" style="margin-top:.6rem">每组之间坐下歇 1 分钟。动作要慢：2 秒上、2 秒下。全程用鼻子吸气、嘴呼气，<b>别憋气</b>。</div>
+  <button class="pri" id="done">练完了，去反馈</button>
+</div>
+
+<!-- 第三步：反馈 -->
+<div class="card hide" id="step3">
+  <h2>③ 练完感觉怎么样？</h2>
+  <div class="opts" data-q="fb">
+    <button data-v="easy">轻松，还能再多</button><button data-v="ok">刚好</button>
+    <button data-v="hard">有点吃力</button><button data-v="tight">胸闷了</button>
+  </div>
+  <div style="margin-top:.8rem">手表上运动时最高心率（可不填）</div>
+  <input type="number" id="hr" inputmode="numeric" placeholder="比如 105">
+  <div style="margin-top:.6rem">想记点什么（可不填）</div>
+  <textarea id="note" rows="2"></textarea>
+  <button class="pri" id="save">保存</button>
+</div>
+
+<div class="card hide" id="result"></div>
+
+<div class="alert">
+<b>出现下面任何一种，马上停下，打急救电话（美国 911 / 国内 120）：</b><br>
+胸口压榨样疼痛、疼到胳膊下巴后背；休息 15 分钟还不缓解；大汗、恶心、头晕眼前发黑；呼吸困难。
+</div>
+
+<div class="card">
+  <details><summary>打卡记录</summary>
+    <div id="hist"></div>
+    <button id="copy">复制记录（发给冬冬或医生）</button>
+  </details>
+</div>
+
+<div class="card">
+  <details><summary>这个手册是怎么调的</summary>
+  <ul class="mute">
+    <li><b>不按心率定强度。</b>倍他乐克会把心率压低，所以看感觉：走路以「能说完整句子、不憋」为准。</li>
+    <li><b>力量日之间至少隔一天</b>，中间是走路日。</li>
+    <li><b>连着练 3 天，第 4 天强制休息。</b>以前都是第 5 天左右开始闷，这一条就是为了防这个。</li>
+    <li><b>睡不好那天只走路、不做力量。</b>你说过缺觉的时候一定会闷。</li>
+    <li><b>连续 3 次力量日都「轻松」或「刚好」才升一级</b>，而且一周最多升一级。慢慢来。</li>
+    <li>「有点吃力」就保持不变；「胸闷了」，或者第二天早上一起来就胸口紧，就退一级，第二天休息。</li>
+  </ul>
+  <button id="reset" style="background:#f3e5e5;color:#a33">清空所有记录重新开始</button>
+  </details>
+</div>
+</main>
+<script>
+// ---------- 等级表 ----------
+// [名称, 组数×次数/时长, 动作要领]
+const LEVELS = {
+  walk:   [15,18,20,22,25,25,28,30,32,35],
+  calf:   ["2×8","2×10","2×12","3×10","3×12","3×15","单脚 2×6","单脚 2×8","单脚 3×8","单脚 3×10"],
+  sit:    ["2×5（可扶）","2×6","2×8","3×8","3×10","3×10（双手抱胸）","3×12","3×12","3×15","3×15"],
+  wall:   ["2×5","2×6","2×8","2×10","3×8","3×10","3×12","台面 3×8","台面 3×10","台面 3×12"],
+  row:    [null,"2×8","2×10","3×8","3×10","3×12","3×12","3×15","3×15（换紧一号带子）","3×15"],
+  bridge: [null,null,"2×8","2×10","3×8","3×10","3×12","3×12","3×15","3×15"],
+  hop:    [null,null,null,null,"2×20 下","2×30 下","3×30 下","3×40 下","3×50 下","3×60 下"],
+};
+const HOW = {
+  calf:"手扶椅背，双脚与肩同宽，慢慢踮起脚尖，顶端停 1 秒，再慢慢放下。练小腿。",
+  sit:"坐椅子前半部分，双脚平放，身体前倾、站起来，再慢慢坐下（别「砸」下去）。练大腿。",
+  wall:"面对墙一臂远，双手撑墙，弯手臂让胸口靠近墙，再推回来。「台面」＝改撑厨房台面，更难一点。",
+  row:"坐在椅子上，弹力带绕过脚底，两手往后拉到腰边，挤一下后背，再慢慢放回。",
+  bridge:"躺在床上，屈膝脚踩床，抬起屁股到身体成一条线，停 2 秒放下。",
+  hop:"原地脚掌着地轻轻颠跳，像拍皮球，不用跳高。做完歇 1 分钟。",
+};
+const NAME = {calf:"踮脚尖",sit:"坐站起立",wall:"推墙",row:"弹力带划船",bridge:"臀桥",hop:"原地小颠跳"};
+
+// ---------- 存储 ----------
+const KEY="heart-v1";
+let S = JSON.parse(localStorage.getItem(KEY)||"null") || {level:1,good:0,lastUp:null,restOn:null,logs:[]};
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const ymd=d=>{d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const daysAgo=s=>Math.round((new Date(ymd())-new Date(s))/864e5);
+const pick={};
+
+function renderLevel(){
+  lvNum.textContent=S.level;
+  lvBar.innerHTML=Array.from({length:10},(_,i)=>`<span class="${i<S.level?"on":""}"></span>`).join("");
+  lvNote.textContent=S.level<10?`再有 ${Math.max(0,3-S.good)} 次力量日感觉「轻松/刚好」就可以升级`:"已经到最高级，保持就好！";
+  today.textContent=new Date().toLocaleDateString("zh-CN",{month:"long",day:"numeric",weekday:"long"});
+}
+
+// 连续活动天数（不含今天）
+function streak(){
+  let n=0;
+  for(let i=1;i<10;i++){
+    const d=ymd(new Date(Date.now()-i*864e5));
+    const l=S.logs.find(x=>x.date===d);
+    if(l && l.type!=="rest") n++; else break;
+  }
+  return n;
+}
+function lastStrength(){
+  const l=[...S.logs].reverse().find(x=>x.type==="strength");
+  return l?daysAgo(l.date):99;
+}
+
+function plan(sleep,chest){
+  let type, msg="";
+  if(chest==="strong") return {type:"stop"};
+  if(chest==="mild"){ type="rest"; msg="早上就有点紧，说明前几天累积了，今天只做放松。等级退一级。"; }
+  else if(S.restOn===ymd()){ type="rest"; msg="昨天胸闷了，今天休息恢复。"; }
+  else if(streak()>=3){ type="rest"; msg="已经连着练了 3 天，今天休息。这是计划的一部分，不是偷懒。"; }
+  else if(sleep==="bad"||sleep==="pill"){ type="walk"; msg="没睡好，今天不做力量，只慢走，时间减半。"; }
+  else if(lastStrength()>=2){ type="strength"; }
+  else type="walk";
+  return {type,msg,short:(sleep==="bad"||sleep==="pill")};
+}
+
+// ---------- 动作动画（纯 SVG，不用联网，国内也能看） ----------
+const pt=p=>p.join(",");
+function fig(poses,dur,props="",extra=""){
+  const kt=poses.map((_,i)=>(i/(poses.length-1)).toFixed(3)).join(";");
+  const an=(attr,vals)=>`<animate attributeName="${attr}" values="${vals.join(";")}" keyTimes="${kt}" dur="${dur}s" repeatCount="indefinite" calcMode="spline" keySplines="${Array(poses.length-1).fill(".45 0 .55 1").join(";")}"/>`;
+  const line=(f,cls)=>`<polyline class="${cls}" points="${f(poses[0])}">${an("points",poses.map(f))}</polyline>`;
+  const leg=(K,A,he,to)=>p=>[p.P,p[K],p[A],p[he],p[to],p[A]].map(pt).join(" ");
+  const arm=(E,W)=>p=>[p.S,p[E],p[W]].map(pt).join(" ");
+  let s="";
+  if(poses[0].K2) s+=line(leg("K2","A2","he2","to2"),"far");
+  if(poses[0].E2) s+=line(arm("E2","W2"),"far");
+  s+=line(p=>[p.P,p.S].map(pt).join(" "),"body");
+  s+=line(leg("K","A","he","to"),"body");
+  s+=line(arm("E","W"),"body");
+  s+=`<circle class="head" r="11" cx="${poses[0].H[0]}" cy="${poses[0].H[1]}">${an("cx",poses.map(p=>p.H[0]))}${an("cy",poses.map(p=>p.H[1]))}</circle>`;
+  return `<svg viewBox="0 0 200 160" class="anim"><line x1="0" y1="150.5" x2="200" y2="150.5" class="floor"/>${props}${s}${typeof extra==="function"?extra(an,poses):extra}</svg>`;
+}
+const CHAIR_BACK=`<path class="prop" d="M126 70V150M126 108H150V150M126 70h6"/>`;
+const CHAIR_SEAT=x=>`<path class="prop" d="M${x} 60V105M${x} 105H${x+40}V150M${x} 105V150"/>`;
+const up=(p,dy)=>Object.fromEntries(Object.entries(p).map(([k,v])=>[k,[v[0],v[1]-dy]]));
+const STAND={H:[100,26],S:[100,40],P:[100,80],K:[100,112],A:[100,144],he:[96,150],to:[116,150],E:[110,60],W:[124,72]};
+const ANIM={
+  calf:fig([STAND,{...up(STAND,8),he:[102,143],to:[116,150],A:[104,136],W:[124,72]},STAND],4,CHAIR_BACK),
+  sit:fig([
+    {H:[94,49],S:[92,63],P:[82,103],K:[118,103],A:[120,145],he:[116,150],to:[134,150],E:[104,80],W:[122,82]},
+    {H:[134,54],S:[124,64],P:[98,96],K:[119,108],A:[120,145],he:[116,150],to:[134,150],E:[136,80],W:[150,84]},
+    {H:[114,21],S:[114,35],P:[112,75],K:[117,111],A:[120,145],he:[116,150],to:[134,150],E:[126,54],W:[138,60]},
+    {H:[114,21],S:[114,35],P:[112,75],K:[117,111],A:[120,145],he:[116,150],to:[134,150],E:[126,54],W:[138,60]},
+    {H:[134,54],S:[124,64],P:[98,96],K:[119,108],A:[120,145],he:[116,150],to:[134,150],E:[136,80],W:[150,84]},
+    {H:[94,49],S:[92,63],P:[82,103],K:[118,103],A:[120,145],he:[116,150],to:[134,150],E:[104,80],W:[122,82]}],5,CHAIR_SEAT(60)),
+  wall:fig([
+    {H:[143,60],S:[135,70],P:[101,104],K:[79,126],A:[60,145],he:[55,150],to:[72,150],E:[148,71],W:[160,72]},
+    {H:[157,75],S:[146,84],P:[107,111],K:[82,130],A:[60,145],he:[55,150],to:[72,150],E:[150,98],W:[160,72]},
+    {H:[143,60],S:[135,70],P:[101,104],K:[79,126],A:[60,145],he:[55,150],to:[72,150],E:[148,71],W:[160,72]}],4,
+    `<rect class="wallr" x="162" y="0" width="38" height="150"/>`),
+  row:fig([
+    {H:[86,49],S:[84,63],P:[80,103],K:[116,106],A:[146,140],he:[144,150],to:[154,134],E:[110,82],W:[136,96]},
+    {H:[80,49],S:[80,63],P:[80,103],K:[116,106],A:[146,140],he:[144,150],to:[154,134],E:[64,84],W:[90,92]},
+    {H:[86,49],S:[84,63],P:[80,103],K:[116,106],A:[146,140],he:[144,150],to:[154,134],E:[110,82],W:[136,96]}],4,
+    CHAIR_SEAT(50),(an,ps)=>`<line class="band" x1="154" y1="136" x2="${ps[0].W[0]}" y2="${ps[0].W[1]}">${an("x2",ps.map(p=>p.W[0]))}${an("y2",ps.map(p=>p.W[1]))}</line>`),
+  bridge:fig([
+    {H:[28,138],S:[48,143],P:[100,145],K:[128,110],A:[150,145],he:[146,150],to:[164,150],E:[72,147],W:[94,148]},
+    {H:[28,138],S:[48,143],P:[104,112],K:[134,104],A:[150,145],he:[146,150],to:[164,150],E:[72,147],W:[94,148]},
+    {H:[28,138],S:[48,143],P:[104,112],K:[134,104],A:[150,145],he:[146,150],to:[164,150],E:[72,147],W:[94,148]},
+    {H:[28,138],S:[48,143],P:[100,145],K:[128,110],A:[150,145],he:[146,150],to:[164,150],E:[72,147],W:[94,148]}],5),
+  hop:fig([
+    {...STAND,P:[100,84],K:[106,114],E:[92,62],W:[96,80],H:[100,30],S:[100,44]},
+    {...up(STAND,10),E:[92,52],W:[96,70],he:[102,138],to:[112,146],A:[103,132]},
+    {...STAND,P:[100,84],K:[106,114],E:[92,62],W:[96,80],H:[100,30],S:[100,44]}],0.7),
+  walk:fig([
+    {H:[100,26],S:[100,40],P:[100,80],K:[110,112],A:[116,144],he:[112,150],to:[130,150],K2:[92,112],A2:[80,140],he2:[76,146],to2:[90,150],E:[90,60],W:[86,76],E2:[110,60],W2:[118,74]},
+    {H:[100,26],S:[100,40],P:[100,80],K:[92,112],A:[80,140],he:[76,146],to:[90,150],K2:[110,112],A2:[116,144],he2:[112,150],to2:[130,150],E:[110,60],W:[118,74],E2:[90,60],W2:[86,76]},
+    {H:[100,26],S:[100,40],P:[100,80],K:[110,112],A:[116,144],he:[112,150],to:[130,150],K2:[92,112],A2:[80,140],he2:[76,146],to2:[90,150],E:[90,60],W:[86,76],E2:[110,60],W2:[118,74]}],1.4),
+  breath:`<svg viewBox="0 0 200 160" class="anim"><line x1="0" y1="150.5" x2="200" y2="150.5" class="floor"/>${CHAIR_SEAT(60).replace("M60 60V105","M60 50V105")}
+    <circle class="head" r="11" cx="84" cy="44"/><polyline class="body" points="82,58 80,103 116,104 120,145 116,150 134,150 120,145"/>
+    <ellipse class="belly" cx="88" cy="88" rx="5" ry="10"><animate attributeName="rx" values="4;13;13;4" keyTimes="0;0.2105;0.5789;1" dur="19s" repeatCount="indefinite"/></ellipse>
+    <polyline class="body" points="82,62 96,80 98,88"/>
+    <text x="150" y="60" class="cue">吸气 4 秒<animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.2105;0.2106;1" dur="19s" repeatCount="indefinite"/></text>
+    <text x="150" y="60" class="cue" opacity="0">屏住 7 秒<animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.2105;0.2106;0.5789;0.579;1" dur="19s" repeatCount="indefinite"/></text>
+    <text x="150" y="60" class="cue" opacity="0">呼气 8 秒<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.5789;0.579;1" dur="19s" repeatCount="indefinite"/></text></svg>`,
+};
+
+// ---------- 计时器 + 声音 ----------
+const mmss=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+const TIMER=(sec,mode,label)=>`<div class="tm" data-sec="${sec}" data-mode="${mode}"><div class="tmv">${mmss(sec)}</div><div class="tmcue">${label||""}</div><div class="tmbtns"><button class="tmgo">▶ 开始</button><button class="tmrs">重来</button></div></div>`;
+let actx=null, run=null, wake=null;
+const voiceOn=()=>localStorage.getItem(KEY+"-voice")!=="off";
+function tone(f1,f2,dur,vol){
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;
+    o.type="sine";o.frequency.setValueAtTime(f1,t);o.frequency.linearRampToValueAtTime(f2,t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.25,t+.05);g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(g).connect(actx.destination);o.start(t);o.stop(t+dur+.05);
+  }catch(e){}
+}
+const ding=()=>{tone(880,880,.25,.3);setTimeout(()=>tone(1320,1320,.5,.3),280)};
+function say(t){
+  if(!voiceOn()||!window.speechSynthesis) return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="zh-CN";u.rate=.9;speechSynthesis.speak(u);}catch(e){}
+}
+async function keepAwake(on){
+  try{ if(on&&navigator.wakeLock&&!wake) wake=await navigator.wakeLock.request("screen");
+       if(!on&&wake){wake.release();wake=null;} }catch(e){}
+}
+// ---------- 背景音乐（公版老歌旋律，八音盒音色） ----------
+const musicOn=()=>localStorage.getItem(KEY+"-music")!=="off";
+const SONGS={
+  // 送别（李叔同词）——呼吸用，慢
+  breath:{name:"送别",bpm:60,vol:.06,notes:"5/1 3/.5 5/.5 1'/2 6/1 1'/1 5/2 5/1 1/.5 2/.5 3/1 2/.5 1/.5 2/4 5/1 3/.5 5/.5 1'/1.5 7/.5 6/1 1'/1 5/2 5/1 2/.5 3/.5 4/1.5 7,/.5 1/4 6/1 1'/1 1'/2 7/1 6/.5 7/.5 1'/2 6/.5 7/.5 1'/.5 6/.5 6/.5 5/.5 3/.5 1/.5 2/4 5/1 3/.5 5/.5 1'/1.5 7/.5 6/1 1'/1 5/2 5/1 2/.5 3/.5 4/1.5 7,/.5 1/4 0/2"},
+  // 茉莉花——走路用
+  walk:{name:"茉莉花",bpm:66,vol:.07,notes:"3/.5 3/.25 5/.25 6/.25 1'/.25 1'/.25 6/.25 5/.5 5/.25 6/.25 5/1 3/.5 3/.25 5/.25 6/.25 1'/.25 1'/.25 6/.25 5/.5 5/.25 6/.25 5/1 5/.5 5/.5 5/.5 3/.25 5/.25 6/.5 6/.5 5/1 3/.5 2/.25 3/.25 5/.5 5/.25 3/.25 2/.5 2/.25 1/.25 2/1 0/1"},
+  // 友谊地久天长——组间休息用
+  rest:{name:"友谊地久天长",bpm:80,vol:.07,notes:"5,/1 1/1.5 1/.5 1/1 3/1 2/1.5 1/.5 2/1 3/1 1/1.5 1/.5 3/1 5/1 6/3 6/1 5/1.5 3/.5 3/1 1/1 2/1.5 1/.5 2/1 3/1 1/1.5 6,/.5 6,/1 5,/1 1/3 6/1 5/1.5 3/.5 3/1 1/1 2/1.5 1/.5 2/1 6/1 5/1.5 3/.5 3/1 5/1 6/3 1'/1 5/1.5 3/.5 3/1 1/1 2/1.5 1/.5 2/1 3/1 1/1.5 6,/.5 6,/1 5,/1 1/3"},
+};
+const DEG={1:0,2:2,3:4,4:5,5:7,6:9,7:11};
+const parse=str=>str.split(" ").map(t=>{const [n,b]=t.split("/");const d=n[0];
+  if(d==="0") return [0,+b];
+  const oct=(n.includes("'")?12:0)-(n.includes(",")?12:0);
+  return [349.23*Math.pow(2,(DEG[d]+oct)/12),+b];});
+let mus=null;
+// iPhone 静音键会把 Web Audio 静音；改成先把旋律渲染成音频文件，用 <audio> 播放（不受静音键影响，锁屏也能继续）
+try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
+const TRACKS={};
+function wavBlob(buf){
+  const d=buf.getChannelData(0), n=d.length, sr=buf.sampleRate, ab=new ArrayBuffer(44+n*2), v=new DataView(ab);
+  const w=(o,str)=>{for(let i=0;i<str.length;i++)v.setUint8(o+i,str.charCodeAt(i))};
+  w(0,"RIFF");v.setUint32(4,36+n*2,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,n*2,true);
+  for(let i=0;i<n;i++){const x=Math.max(-1,Math.min(1,d[i]));v.setInt16(44+i*2,x*32767,true);}
+  return new Blob([ab],{type:"audio/wav"});
+}
+async function renderSong(k){
+  const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext; if(!OC) return;
+  const sg=SONGS[k], notes=parse(sg.notes), spb=60/sg.bpm, sr=22050;
+  const total=notes.reduce((x,y)=>x+y[1],0)*spb;
+  const oc=new OC(1,Math.ceil(total*sr),sr); let t=0;
+  for(const [f,b] of notes){ const d=b*spb;
+    if(f){ const o=oc.createOscillator(),o2=oc.createOscillator(),g=oc.createGain();
+      o.type="triangle";o.frequency.value=f;o2.type="sine";o2.frequency.value=f*2;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+Math.max(.4,d*1.1));
+      o.connect(g);o2.connect(g);g.connect(oc.destination);o.start(t);o2.start(t);o.stop(Math.min(total,t+d*1.2+.1));o2.stop(Math.min(total,t+d*1.2+.1)); }
+    t+=d; }
+  const buf=await oc.startRendering();
+  const au=new Audio(URL.createObjectURL(wavBlob(buf))); au.loop=true; au.preload="auto"; TRACKS[k]=au;
+  if(run&&run.el.dataset.mode===k&&musicOn()&&!mus) startMusic(k,true);
+}
+Object.keys(SONGS).forEach(k=>renderSong(k).catch(()=>{}));
+function startMusic(mode,fresh){
+  stopMusic(); const au=TRACKS[mode]; if(!au||!musicOn()) return;
+  if(fresh) au.currentTime=0;
+  au.play().catch(()=>{}); mus=au;
+}
+function stopMusic(){ if(mus){mus.pause();mus=null;} }
+function stopRun(){ stopMusic(); if(run){clearInterval(run.iv);run.btn.textContent="▶ 继续";run.el.classList.remove("on");run=null;keepAwake(false);} }
+function tick(){
+  const r=run, el=r.el, total=+el.dataset.sec;
+  const used=r.base+Math.floor((Date.now()-r.t0)/1000), left=Math.max(0,total-used);
+  el.querySelector(".tmv").textContent=mmss(left);
+  if(used===r.last) return; r.last=used;
+  const cue=el.querySelector(".tmcue"), mode=el.dataset.mode;
+  if(mode==="breath"&&left>0){
+    const ph=used%19;
+    if(ph===0){cue.textContent="吸气 4 秒… 肚子鼓起来";tone(330,494,.6);if(used>0)say("吸气");}
+    else if(ph===4){cue.textContent="屏住 7 秒…";tone(494,494,.3);say("屏住");}
+    else if(ph===11){cue.textContent="呼气 8 秒… 慢慢吐";tone(494,330,.9);say("慢慢呼气");}
+  }
+  if(mode==="walk"&&left>0&&used>0&&used%60===0){
+    tone(660,660,.15);
+    if(left===60) say("还有一分钟"); else if(used===Math.floor(total/2/60)*60) say("已经走了一半");
+  }
+  if(mode==="rest"&&left===10) say("还有十秒");
+  if(left===0){
+    clearInterval(r.iv); run=null; keepAwake(false); el.classList.remove("on"); stopMusic();
+    r.btn.textContent="▶ 开始"; el.dataset.used="0"; ding();
+    if(mode==="rest"){cue.textContent="可以做下一组了";say("结束。休息好了，可以做下一组了");el.querySelector(".tmv").textContent=mmss(total);}
+    else{cue.textContent="完成 ✓";say(mode==="breath"?"结束。呼吸练习完成，做得很好":"结束。走完了，做得很好");const cb=el.closest(".ex")?.querySelector("input[type=checkbox]");if(cb)cb.checked=true;}
+  }
+}
+document.addEventListener("click",e=>{
+  const el=e.target.closest(".tm"); if(!el) return;
+  e.preventDefault();
+  if(e.target.classList.contains("tmrs")){
+    if(run&&run.el===el) stopRun();
+    el.dataset.used="0"; el.querySelector(".tmv").textContent=mmss(+el.dataset.sec);
+    el.querySelector(".tmgo").textContent="▶ 开始"; el.querySelector(".tmcue").textContent=""; return;
+  }
+  if(!e.target.classList.contains("tmgo")) return;
+  if(run&&run.el===el){ el.dataset.used=String(run.base+Math.floor((Date.now()-run.t0)/1000)); stopRun(); return; }
+  stopRun(); tone(0,0,.01,0); // 手机要点一下才能出声，这里顺便解锁
+  const base=+(el.dataset.used||0);
+  if(el.dataset.mode==="breath") el.closest(".ex")?.querySelector("svg")?.setCurrentTime?.(base%19);
+  run={el,btn:e.target,base,t0:Date.now(),last:-1};
+  e.target.textContent="⏸ 暂停"; el.classList.add("on"); keepAwake(true);
+  const m=el.dataset.mode;
+  if(base===0) say(m==="walk"?"开始。慢慢走，能说话不憋气就对了":m==="rest"?"开始休息，坐下喝口水":"开始。先吸气");
+  else say("继续");
+  startMusic(m,base===0);
+  run.iv=setInterval(tick,250); tick();
+});
+
+function exHTML(k,val,i){
+  return `<div class="ex"><label><input type="checkbox"><div><b>${NAME[k]}</b> &nbsp;${val}</div></label>${ANIM[k]||""}<div class="how">${HOW[k]}</div>${TIMER(60,"rest","每组做完，点这里歇 1 分钟")}</div>`;
+}
+function walkHTML(min){
+  return `<div class="ex"><label><input type="checkbox"><div><b>慢走</b> &nbsp;${min} 分钟</div></label>${ANIM.walk}<div class="how">速度以「能说完整的句子、不憋气」为准，一觉得憋就放慢。</div>${TIMER(min*60,"walk","每过一分钟会响一下")}</div>`;
+}
+const BREATH=`<div class="ex"><label><input type="checkbox"><div><b>4-7-8 呼吸放松</b> &nbsp;5 分钟</div></label>${ANIM.breath}<div class="how">靠坐或躺下，一只手放肚子上。用鼻子吸气 4 秒，肚子鼓起来；轻轻屏住 7 秒；嘴巴慢慢呼气 8 秒，呼得越慢越好。跟着声音做，可以闭上眼睛。<br><b>屏气时如果胸口更紧、或者头晕，就别屏了，吸完直接慢慢呼。</b></div>${TIMER(304,"breath","")}</div>`;
+
+let cur=null;
+go.onclick=()=>{
+  if(!pick.sleep||!pick.chest){alert("两个问题都选一下");return;}
+  const p=plan(pick.sleep,pick.chest); cur=p;
+  step2.classList.remove("hide");
+  const i=S.level-1;
+  if(p.type==="stop"){
+    dayTag.textContent="今天不练";dayTag.className="tag rest";
+    dayMsg.innerHTML=`<div class="alert">现在明显发紧、心慌，今天别练了。先坐下做腹式呼吸。<br>如果<b>越来越重，或者休息 15 分钟不缓解</b>，打急救电话。<br>如果连着好几天都这样，告诉冬冬，去看一下心内科。</div>`;
+    exList.innerHTML=BREATH; done.textContent="记一下今天";
+  } else if(p.type==="rest"){
+    dayTag.textContent="恢复日";dayTag.className="tag rest";
+    dayMsg.innerHTML=`<div class="good">${p.msg}</div>`;
+    exList.innerHTML=BREATH+walkHTML(10).replace("<b>慢走</b>","<b>（想动的话）慢走</b>");
+  } else if(p.type==="walk"){
+    dayTag.textContent="走路日";dayTag.className="tag walk";
+    dayMsg.innerHTML=p.msg?`<div class="good">${p.msg}</div>`:"";
+    const m=p.short?Math.round(LEVELS.walk[i]/2):LEVELS.walk[i];
+    exList.innerHTML=walkHTML(m)+(p.short?"":exHTML("calf",LEVELS.calf[i]))+BREATH;
+  } else {
+    dayTag.textContent="力量日";dayTag.className="tag";
+    dayMsg.innerHTML="";
+    let h=walkHTML(8).replace("慢走","热身慢走");
+    for(const k of ["calf","sit","wall","row","bridge","hop"]) if(LEVELS[k][i]) h+=exHTML(k,LEVELS[k][i]);
+    exList.innerHTML=h+BREATH;
+  }
+  step2.scrollIntoView({behavior:"smooth"});
+};
+
+done.onclick=()=>{ step3.classList.remove("hide"); step3.scrollIntoView({behavior:"smooth"}); };
+
+document.querySelectorAll(".opts").forEach(g=>g.addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  g.querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+  pick[g.dataset.q]=b.dataset.v;
+}));
+
+document.getElementById("save").onclick=()=>{
+  if(!pick.fb){alert("选一下感觉");return;}
+  const type=cur.type==="stop"?"rest":cur.type;
+  const before=S.level; let msg="";
+  const fb=pick.fb;
+  if(pick.chest==="mild"||cur.type==="stop"){
+    S.level=Math.max(1,S.level-1); S.good=0;
+  }
+  if(fb==="tight"){
+    S.level=Math.max(1,S.level-1); S.good=0; S.restOn=ymd(new Date(Date.now()+864e5));
+    msg=`<div class="alert">退回到第 ${S.level} 级，明天休息。现在坐下做腹式呼吸。如果休息 15 分钟还不缓解，或者越来越重，打急救电话。</div>`;
+  } else if(fb==="hard"){
+    S.good=0; msg=`<div class="good">保持第 ${S.level} 级，不加量。下次还是这个强度。</div>`;
+  } else if(type==="strength"){
+    S.good++;
+    if(S.good>=3 && S.level<10 && (!S.lastUp||daysAgo(S.lastUp)>=7)){
+      S.level++; S.good=0; S.lastUp=ymd();
+      msg=`<div class="good">🎉 升到第 ${S.level} 级！下一个力量日开始用新的量。</div>`;
+    } else if(S.good>=3){
+      msg=`<div class="good">很好！这周已经升过级了，下周再升，让身体先适应。</div>`;
+    } else msg=`<div class="good">很好！再有 ${3-S.good} 次这样就升级。</div>`;
+  } else msg=`<div class="good">记下了，今天辛苦了。</div>`;
+  if(S.level<before && fb!=="tight") msg=`<div class="alert">早上胸口发紧，已退回第 ${S.level} 级。</div>`+msg;
+  S.logs=S.logs.filter(x=>x.date!==ymd());
+  S.logs.push({date:ymd(),type,level:before,sleep:pick.sleep,chest:pick.chest,fb,hr:hrIn(),note:document.getElementById("note").value.trim()});
+  save();
+  result.innerHTML=msg+`<div class="mute">明天打开这个页面，从第 ① 步开始。</div>`;
+  result.classList.remove("hide");
+  [step2,step3].forEach(x=>x.classList.add("hide"));
+  renderLevel(); renderHist(); result.scrollIntoView({behavior:"smooth"});
+};
+const hrIn=()=>{const v=document.getElementById("hr").value;return v?Number(v):null};
+
+const TXT={good:"好",ok:"一般",bad:"差",pill:"安定",none:"松",mild:"有点紧",strong:"明显",easy:"轻松",hard:"吃力",tight:"胸闷",strength:"力量",walk:"走路",rest:"休息"};
+function renderHist(){
+  const rows=[...S.logs].reverse().slice(0,60).map(l=>`<tr><td>${l.date.slice(5)}</td><td>${TXT[l.type]}</td><td>${l.level}</td><td>${TXT[l.sleep]||""}</td><td>${TXT[l.chest]||""}</td><td>${l.fb==="ok"?"刚好":TXT[l.fb]}</td><td>${l.hr||""}</td></tr>`).join("");
+  hist.innerHTML=rows?`<table><tr><th>日期</th><th>类型</th><th>级</th><th>睡眠</th><th>练前</th><th>感觉</th><th>心率</th></tr>${rows}</table>`:`<div class="mute">还没有记录</div>`;
+}
+copy.onclick=()=>{
+  const t="运动记录\n"+S.logs.map(l=>`${l.date} ${TXT[l.type]} 第${l.level}级 睡眠${TXT[l.sleep]||"-"} 练前${TXT[l.chest]||"-"} 感觉${l.fb==="ok"?"刚好":TXT[l.fb]}${l.hr?" 心率"+l.hr:""}${l.note?" "+l.note:""}`).join("\n");
+  navigator.clipboard?.writeText(t).then(()=>alert("已复制，去微信里粘贴就行"),()=>prompt("长按全选复制：",t));
+};
+reset.onclick=()=>{ if(confirm("确定清空所有记录？")){localStorage.removeItem(KEY);location.reload();} };
+
+const voiceLabel=()=>voiceBtn.textContent=voiceOn()?"🔊 语音：开":"🔈 语音：关";
+const musicLabel=()=>musicBtn.textContent=musicOn()?"🎵 音乐：开":"🎵 音乐：关";
+musicBtn.onclick=()=>{localStorage.setItem(KEY+"-music",musicOn()?"off":"on");musicLabel();if(!musicOn())stopMusic();else if(run)startMusic(run.el.dataset.mode);};
+musicLabel();
+voiceBtn.onclick=()=>{localStorage.setItem(KEY+"-voice",voiceOn()?"off":"on");voiceLabel();if(voiceOn())say("语音提示已打开");};
+voiceLabel();
+renderLevel(); renderHist();
+</script></body></html>
