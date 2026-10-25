@@ -323,7 +323,7 @@ let mus=null;
 // 用 <audio> 播放（不受 iPhone 静音键影响，锁屏也能继续）；音量已在文件里压低，iPhone 不能用 JS 调音量
 setSession();
 const TRACKS={};
-["breath","walk","rest"].forEach(k=>{const au=new Audio("music/m_"+k+".mp3");au.loop=true;au.preload="auto";TRACKS[k]=au;});
+["breath","walk","rest"].forEach(k=>{const au=new Audio("music/m2_"+k+".mp3");au.loop=true;au.preload="auto";TRACKS[k]=au;});
 function startMusic(mode,fresh){
   stopMusic(); const au=TRACKS[mode]; if(!au||!musicOn()) return;
   if(fresh) au.currentTime=0;
