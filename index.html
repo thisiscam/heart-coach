@@ -99,9 +99,13 @@ details summary{font-weight:700;cursor:pointer}
 <div class="card hide" id="step2">
   <h2>② 今天练这些 <span id="dayTag" class="tag"></span></h2>
   <div id="dayMsg"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem"><button id="voiceBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button><button id="musicBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem"><button id="voiceBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button><select id="musicSel" style="background:#f3efe8;font-size:.85rem;padding:.45rem;border:0;border-radius:10px;width:100%">
+    <option value="classic">🎵 音乐：经典</option><option value="lyric">🎵 音乐：抒情</option><option value="pop">🎵 音乐：流行</option>
+    <option value="rock">🎵 音乐：摇滚</option><option value="country">🎵 音乐：乡村</option><option value="rap">🎵 音乐：说唱</option>
+    <option value="opera">🎵 音乐：美声</option><option value="musical">🎵 音乐：音乐剧</option>
+    <option value="own">🎶 放自己的歌</option><option value="off">🔇 音乐：关</option></select></div>
   <div id="ownTip" style="display:none;background:#fff6e0;border-radius:8px;padding:.5rem .6rem;margin-top:.4rem;font-size:.9rem">🎶 <b>放自己喜欢的歌：</b>先打开 QQ音乐 或 网易云，放邓丽君、粉红的回忆这些老歌，再切回这个页面点「开始」。计时的提示语音照常会说，说话时歌声会自动小一点。</div>
-  <div id="musicCredit" style="font-size:.72rem;color:#999;margin-top:.3rem">音乐：呼吸《Gymnopédie 第一号》· 走路《拉德茨基进行曲》· 休息《卡农》。录音：Kevin MacLeod（incompetech.com，CC BY 3.0）、美国海军陆战队乐团</div>
+  <div id="musicCredit" style="font-size:.72rem;color:#999;margin-top:.3rem"></div>
   <div id="prog" class="prog"><div class="progbar"><span id="progFill"></span></div><div id="progTxt"></div></div>
   <div id="exList"></div>
   <div class="mute" style="margin-top:.6rem">每组之间坐下歇 1 分钟。动作要慢：2 秒上、2 秒下。全程用鼻子吸气、嘴呼气，<b>别憋气</b>。</div>
@@ -316,21 +320,34 @@ async function keepAwake(on){
   try{ if(on&&navigator.wakeLock&&!wake) wake=await navigator.wakeLock.request("screen");
        if(!on&&wake){wake.release();wake=null;} }catch(e){}
 }
-// ---------- 背景音乐（真实演奏录音，可公开使用） ----------
-// 呼吸：萨蒂《裸体歌舞》第一号（钢琴，Kevin MacLeod，CC BY 3.0）
-// 走路：《拉德茨基进行曲》（美国海军陆战队乐团，公有领域）
-// 组间休息：帕赫贝尔《卡农》（Kevin MacLeod，CC BY 3.0）
-const musicMode=()=>{const m=localStorage.getItem(KEY+"-music");return m==="off"||m==="own"?m:"on";};
-const musicOn=()=>musicMode()==="on";
+// ---------- 背景音乐（都是可以公开使用的真实录音） ----------
+// 每种风格：walk 走路、rest 组间休息、breath 呼吸（没有就用抒情的钢琴曲，呼吸时要安静）
+const GENRES={
+  classic:{name:"经典",walk:"拉德茨基进行曲",rest:"卡农",breath:"Gymnopédie 第一号"},
+  lyric:{name:"抒情",walk:"Sunshine",rest:"Dreamer",breath:"Meditation Impromptu"},
+  pop:{name:"流行",walk:"Carefree",rest:"Easy Lemon"},
+  rock:{name:"摇滚",walk:"Happy Bee",rest:"Twisted"},
+  country:{name:"乡村",walk:"Bama Country",rest:"Drankin Song"},
+  rap:{name:"说唱（伴奏）",walk:"Galactic Rap",rest:"Dream Catcher"},
+  opera:{name:"美声",walk:"卡鲁索《舞曲》La Danza",rest:"卡鲁索《绿树成荫》Ombra mai fu",breath:"卡鲁索《绿树成荫》Ombra mai fu"},
+  musical:{name:"音乐剧",walk:"《彭赞斯的海盗》A rollicking band of pirates",rest:"《彭赞斯的海盗》Ah, leave me not to pine"},
+};
+const musicMode=()=>{const m=localStorage.getItem(KEY+"-music");return m==="off"||m==="own"||GENRES[m]?m:"classic";};
+const musicOn=()=>!!GENRES[musicMode()];
 // 放自己的歌时用 transient：页面的提示语音只把别的 App 的音乐压低，不打断它
 function setSession(){try{if(navigator.audioSession)navigator.audioSession.type=musicMode()==="own"?"transient":"playback";}catch(e){}}
 let mus=null;
 // 用 <audio> 播放（不受 iPhone 静音键影响，锁屏也能继续）；音量已在文件里压低，iPhone 不能用 JS 调音量
 setSession();
 const TRACKS={};
-["breath","walk","rest"].forEach(k=>{const au=new Audio("music/m2_"+k+".mp3");au.loop=true;au.preload="auto";TRACKS[k]=au;});
+function track(mode){
+  const g=musicMode(); if(!GENRES[g]) return null;
+  const k=mode==="breath"&&!GENRES[g].breath?"lyric_breath":g+"_"+mode;
+  if(!TRACKS[k]){const au=new Audio("music/g_"+k+".mp3");au.loop=true;au.preload="auto";TRACKS[k]=au;}
+  return TRACKS[k];
+}
 function startMusic(mode,fresh){
-  stopMusic(); const au=TRACKS[mode]; if(!au||!musicOn()) return;
+  stopMusic(); if(!musicOn()) return; const au=track(mode); if(!au) return;
   if(fresh) au.currentTime=0;
   au.play().catch(()=>{}); mus=au;
 }
@@ -519,9 +536,13 @@ selAll.onclick=()=>{const bs=[...document.querySelectorAll(".hsel")];const all=b
 delSel.onclick=()=>{const ds=[...document.querySelectorAll(".hsel:checked")].map(b=>b.value);if(!ds.length){alert("先在左边勾选要删的日期");return;}delLogs(ds);selAll.textContent="全选";};
 
 const voiceLabel=()=>voiceBtn.textContent=voiceOn()?"🔊 语音：开":"🔈 语音：关";
-const musicLabel=()=>{const m=musicMode();musicBtn.textContent=m==="on"?"🎵 音乐：古典":m==="own"?"🎶 音乐：放自己的歌":"🎵 音乐：关";
-  ownTip.style.display=m==="own"?"block":"none";musicCredit.style.display=m==="on"?"block":"none";};
-musicBtn.onclick=()=>{const m=musicMode();localStorage.setItem(KEY+"-music",m==="on"?"own":m==="own"?"off":"on");setSession();musicLabel();if(!musicOn())stopMusic();else if(run)startMusic(run.el.dataset.mode);};
+const musicLabel=()=>{const m=musicMode();musicSel.value=m;
+  ownTip.style.display=m==="own"?"block":"none";
+  const g=GENRES[m]; musicCredit.style.display=g?"block":"none";
+  if(g) musicCredit.innerHTML=`走路：${g.walk}　休息：${g.rest}　呼吸：${g.breath||"Meditation Impromptu（呼吸时统一放安静的钢琴）"}<br>`+
+    (m==="opera"||m==="musical"?"这是一百多年前的老唱片，有点沙沙声。":"")+
+    "录音来源：Kevin MacLeod（incompetech.com，CC BY 4.0）、美国海军陆战队乐团、Wikimedia Commons 公有领域老唱片";};
+musicSel.onchange=()=>{localStorage.setItem(KEY+"-music",musicSel.value);setSession();musicLabel();stopMusic();if(musicOn()&&run)startMusic(run.el.dataset.mode,true);};
 musicLabel();
 voiceBtn.onclick=()=>{localStorage.setItem(KEY+"-voice",voiceOn()?"off":"on");voiceLabel();if(voiceOn())say("语音提示已打开");};
 voiceLabel();
