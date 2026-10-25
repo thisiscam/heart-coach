@@ -101,7 +101,7 @@ details summary{font-weight:700;cursor:pointer}
   <div id="dayMsg"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem"><button id="voiceBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button><button id="musicBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button></div>
   <div id="ownTip" style="display:none;background:#fff6e0;border-radius:8px;padding:.5rem .6rem;margin-top:.4rem;font-size:.9rem">🎶 <b>放自己喜欢的歌：</b>先打开 QQ音乐 或 网易云，放邓丽君、粉红的回忆这些老歌，再切回这个页面点「开始」。计时的提示语音照常会说，说话时歌声会自动小一点。</div>
-  <div id="musicCredit" style="font-size:.72rem;color:#999;margin-top:.3rem">音乐：呼吸《二泉映月》· 走路《雨打芭蕉》· 休息《连环扣》，Zhang Peijian 演奏（Wikimedia Commons，CC BY-SA 4.0）</div>
+  <div id="musicCredit" style="font-size:.72rem;color:#999;margin-top:.3rem">音乐：呼吸《Gymnopédie 第一号》· 走路《拉德茨基进行曲》· 休息《卡农》。录音：Kevin MacLeod（incompetech.com，CC BY 3.0）、美国海军陆战队乐团</div>
   <div id="prog" class="prog"><div class="progbar"><span id="progFill"></span></div><div id="progTxt"></div></div>
   <div id="exList"></div>
   <div class="mute" style="margin-top:.6rem">每组之间坐下歇 1 分钟。动作要慢：2 秒上、2 秒下。全程用鼻子吸气、嘴呼气，<b>别憋气</b>。</div>
@@ -311,9 +311,10 @@ async function keepAwake(on){
   try{ if(on&&navigator.wakeLock&&!wake) wake=await navigator.wakeLock.request("screen");
        if(!on&&wake){wake.release();wake=null;} }catch(e){}
 }
-// ---------- 背景音乐（真人民乐演奏录音，CC BY-SA 4.0，Wikimedia Commons） ----------
-// 呼吸：二泉映月（二胡）  走路：雨打芭蕉（高胡，广东音乐）  组间休息：连环扣（高胡，广东音乐）
-// 录音：Zhang Peijian 演奏，David290 录制，https://commons.wikimedia.org/wiki/User:David290
+// ---------- 背景音乐（真实演奏录音，可公开使用） ----------
+// 呼吸：萨蒂《裸体歌舞》第一号（钢琴，Kevin MacLeod，CC BY 3.0）
+// 走路：《拉德茨基进行曲》（美国海军陆战队乐团，公有领域）
+// 组间休息：帕赫贝尔《卡农》（Kevin MacLeod，CC BY 3.0）
 const musicMode=()=>{const m=localStorage.getItem(KEY+"-music");return m==="off"||m==="own"?m:"on";};
 const musicOn=()=>musicMode()==="on";
 // 放自己的歌时用 transient：页面的提示语音只把别的 App 的音乐压低，不打断它
