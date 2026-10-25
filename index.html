@@ -77,37 +77,99 @@ textarea,input[type=number]{font:inherit;width:100%;padding:.5rem;border-radius:
 .legend{display:flex;gap:.8rem;flex-wrap:wrap;font-size:.8rem;color:var(--mute);margin-top:.5rem}
 .legend span.c::before{content:"";display:inline-block;width:.8rem;height:.8rem;border-radius:.2rem;margin-right:.25rem;vertical-align:-1px;background:var(--c)}
 details summary{font-weight:700;cursor:pointer}
-</style></head><body><main>
-<h1>强心手册</h1>
-<div class="mute" id="today"></div>
 
-<div class="card">
-  <div>当前等级 <span class="big" id="lvNum"></span> / 10</div>
-  <div class="lv" id="lvBar"></div>
-  <div class="mute" id="lvNote"></div>
-</div>
+/* ---------- 美化 ---------- */
+:root{--bg:#fbf6ef;--acc:#e0675f;--acc2:#f29e7c;--ok:#3a9d7a;--rest:#6c8ebf;--ink:#3b2f2a}
+body{background:radial-gradient(1200px 500px at 50% -200px,#ffe3d6 0%,transparent 70%),var(--bg);color:var(--ink);letter-spacing:.01em}
+.hero{margin:0 -.9rem;padding:1.4rem 1.3rem 1.2rem;background:linear-gradient(135deg,#e0675f 0%,#f29e7c 60%,#f7c59f 100%);color:#fff;border-radius:0 0 1.6rem 1.6rem;box-shadow:0 8px 24px #e0675f33}
+.hero h1{margin:0;font-size:1.6rem;display:flex;align-items:center;gap:.5rem}
+.hero h1 .hrt{display:inline-block;animation:beat 1.6s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.18)}30%{transform:scale(1)}45%{transform:scale(1.1)}}
+.hero #today{color:#fffd;font-size:.95rem;margin-top:.1rem}
+.hero .lvbox{margin-top:1rem;background:#ffffff26;border-radius:1rem;padding:.7rem .9rem;backdrop-filter:blur(4px)}
+.hero .lvbox .big{font-size:2rem;line-height:1}
+.hero .lv span{background:#ffffff40}.hero .lv span.on{background:#fff}
+.hero #lvNote{color:#fffe;font-size:.88rem}
+.card{border-radius:1.3rem;padding:1.1rem 1.15rem;box-shadow:0 2px 10px #b4826414,0 1px 2px #0000000a;border:1px solid #f1e6da}
+h2{display:flex;align-items:center;gap:.5rem;font-size:1.2rem}
+h2 .no{display:inline-flex;align-items:center;justify-content:center;width:1.8rem;height:1.8rem;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-size:1rem;flex:none}
+button{border-radius:1rem;transition:transform .08s,box-shadow .2s}
+button:active{transform:scale(.97)}
+button.pri{background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 4px 14px #e0675f44}
+.opts button{background:#fff;border:2px solid #f0e4d8;color:var(--ink);padding:.8rem .6rem}
+.opts button.on{outline:0;border-color:var(--acc);background:#fff1ec;color:#b8443c;box-shadow:0 2px 10px #e0675f2a}
+.q{font-weight:700;margin:.2rem 0 .45rem}
+.ex{border:0;background:#fffaf5;border:1px solid #f3e8dc;border-radius:1.1rem;padding:.8rem .85rem;margin:.75rem 0}
+.ex:first-child{border-top:1px solid #f3e8dc}
+.ex label{align-items:center}
+.ex input[type=checkbox]{appearance:none;-webkit-appearance:none;width:2rem;height:2rem;border-radius:50%;border:2.5px solid #d9c9b8;background:#fff;margin:0;display:grid;place-content:center;transition:.2s}
+.ex input[type=checkbox]:checked{background:var(--ok);border-color:var(--ok)}
+.ex input[type=checkbox]:checked::after{content:"✓";color:#fff;font-weight:800;font-size:1.1rem}
+.ex.doneex{background:#f1f8f4;border-color:#cfe8dc}
+.ex b{font-size:1.15rem}
+svg.anim{background:linear-gradient(180deg,#fff 0%,#f7efe6 100%);border-radius:1rem;border:1px solid #f0e4d8}
+.anim .body,.anim .far{stroke:#e0675f}.anim .far{stroke:#f2b3ab}.anim .head{fill:#e0675f}
+.tm{background:#fff;border:1px solid #f0e4d8;border-radius:1rem}
+.tm.on{background:#fff1ec;border-color:#f6c6b8;box-shadow:0 0 0 4px #e0675f1a}
+.tmv{font-size:2.6rem;color:var(--ink)}
+.restbox{background:linear-gradient(180deg,#f2f6fc,#e9f0fa);border-left:0;border:1px solid #d6e2f2;border-radius:1rem;position:relative}
+.restbox::before{content:"";position:absolute;left:-1rem;top:-.8rem;bottom:50%;width:.9rem;border-left:2px dashed #c6d4e8;border-bottom:2px dashed #c6d4e8;border-radius:0 0 0 .6rem}
+.restbox svg.anim{background:linear-gradient(180deg,#fff,#e6eef9);border-color:#d6e2f2}
+.restbox .tm{border-color:#d6e2f2}.restbox .tm.on{background:#e3edfa;box-shadow:0 0 0 4px #6c8ebf22}
+.tmgo{background:linear-gradient(135deg,var(--acc),var(--acc2))!important}
+.restbox .tmgo{background:linear-gradient(135deg,#6c8ebf,#8fb0dc)!important}
+.prog{background:#fffcf8ee;backdrop-filter:blur(6px);border-radius:0 0 1rem 1rem;margin:.3rem -.4rem;padding:.6rem .4rem .5rem}
+.progbar{height:1rem;background:#f0e6db}
+.progbar span{background:linear-gradient(90deg,#3a9d7a,#7cc7a3)}
+.good{background:#eef8f2;border-left:0;border:1px solid #cfe8dc;border-radius:1rem}
+.alert{background:#fff0ee;border-left:0;border:1px solid #f6c9c2;border-radius:1rem}
+.tag{background:linear-gradient(135deg,var(--acc),var(--acc2))}.tag.walk{background:linear-gradient(135deg,#3a9d7a,#6cc39b)}.tag.rest{background:linear-gradient(135deg,#7f86b5,#a3a9d1)}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.3rem}
+.ctrl button,.ctrl select{background:#fff;border:1.5px solid #f0e4d8;border-radius:.9rem;font-size:.85rem;padding:.5rem;margin:0;font-weight:700;color:var(--ink)}
+.cal{gap:.35rem}
+.cal .d{border-radius:.8rem;background:#f7f1ea;font-weight:600}
+.cal .d.strength{background:linear-gradient(135deg,#e0675f,#f29e7c)}.cal .d.walk{background:linear-gradient(135deg,#3a9d7a,#6cc39b)}.cal .d.rest{background:linear-gradient(135deg,#7f86b5,#a3a9d1)}
+.cal .d.today{outline:2.5px solid var(--acc);outline-offset:1px}
+.calnav button{border-radius:50%;width:2.4rem;height:2.4rem;padding:0;background:#fff;border:1.5px solid #f0e4d8}
+details summary{list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::after{content:"›";font-size:1.4rem;color:#c9b6a3;transition:transform .2s}
+details[open] summary::after{transform:rotate(90deg)}
+details summary::-webkit-details-marker{display:none}
+table th{color:var(--mute);font-weight:600}
+textarea,input[type=number]{border:1.5px solid #f0e4d8;border-radius:.8rem;background:#fffdfa}
+.tmrs{background:#f6efe7;color:#7a6a5c}
+</style></head><body><main>
+<header class="hero">
+  <h1><span class="hrt">❤️</span>强心手册</h1>
+  <div id="today"></div>
+  <div class="lvbox">
+    <div>当前等级 <span class="big" id="lvNum"></span> / 10</div>
+    <div class="lv" id="lvBar"></div>
+    <div id="lvNote"></div>
+  </div>
+</header>
 
 <!-- 第一步：练前自查 -->
 <div class="card" id="step1">
-  <h2>① 练之前先问自己</h2>
-  <div>昨晚睡得怎么样？</div>
+  <h2><span class="no">1</span>练之前先问自己</h2>
+  <div class="q">昨晚睡得怎么样？</div>
   <div class="opts" data-q="sleep">
-    <button data-v="good">睡得好</button><button data-v="ok">一般</button>
-    <button data-v="bad">没睡好</button><button data-v="pill">吃了安定才睡</button>
+    <button data-v="good">😊 睡得好</button><button data-v="ok">🙂 一般</button>
+    <button data-v="bad">😩 没睡好</button><button data-v="pill">💊 吃了安定才睡</button>
   </div>
-  <div style="margin-top:.8rem">现在胸口感觉？</div>
+  <div class="q" style="margin-top:.9rem">现在胸口感觉？</div>
   <div class="opts" data-q="chest">
-    <button data-v="none">很松快</button><button data-v="mild">有点紧</button>
-    <button data-v="strong" style="grid-column:1/-1">明显发紧、心慌</button>
+    <button data-v="none">🌿 很松快</button><button data-v="mild">😐 有点紧</button>
+    <button data-v="strong" style="grid-column:1/-1">⚠️ 明显发紧、心慌</button>
   </div>
   <button class="pri" id="go" style="margin-top:1rem">看今天练什么</button>
 </div>
 
 <!-- 第二步：今天的计划 -->
 <div class="card hide" id="step2">
-  <h2>② 今天练这些 <span id="dayTag" class="tag"></span></h2>
+  <h2><span class="no">2</span>今天练这些 <span id="dayTag" class="tag"></span></h2>
   <div id="dayMsg"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem"><button id="voiceBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button><select id="musicSel" style="background:#f3efe8;font-size:.85rem;padding:.45rem;border:0;border-radius:10px;width:100%">
+  <div class="ctrl"><button id="voiceBtn"></button><select id="musicSel">
     <option value="classic">🎵 音乐：经典</option><option value="lyric">🎵 音乐：抒情</option><option value="pop">🎵 音乐：流行</option>
     <option value="rock">🎵 音乐：摇滚</option><option value="country">🎵 音乐：乡村</option><option value="rap">🎵 音乐：说唱</option>
     <option value="opera">🎵 音乐：美声</option><option value="musical">🎵 音乐：音乐剧</option>
@@ -122,10 +184,10 @@ details summary{font-weight:700;cursor:pointer}
 
 <!-- 第三步：反馈 -->
 <div class="card hide" id="step3">
-  <h2>③ 练完感觉怎么样？</h2>
+  <h2><span class="no">3</span>练完感觉怎么样？</h2>
   <div class="opts" data-q="fb">
-    <button data-v="easy">轻松，还能再多</button><button data-v="ok">刚好</button>
-    <button data-v="hard">有点吃力</button><button data-v="tight">胸闷了</button>
+    <button data-v="easy">😄 轻松，还能再多</button><button data-v="ok">👍 刚好</button>
+    <button data-v="hard">😓 有点吃力</button><button data-v="tight">💔 胸闷了</button>
   </div>
   <div style="margin-top:.8rem">手表上运动时最高心率（可不填）</div>
   <input type="number" id="hr" inputmode="numeric" placeholder="比如 105">
@@ -142,7 +204,7 @@ details summary{font-weight:700;cursor:pointer}
 </div>
 
 <div class="card">
-  <h2>打卡日历</h2>
+  <h2>📅 打卡日历</h2>
   <div class="calnav"><button id="calPrev">‹</button><b id="calTitle"></b><button id="calNext">›</button></div>
   <div class="cal" id="cal"></div>
   <div class="legend"><span class="c" style="--c:#c0504d">力量日</span><span class="c" style="--c:#2f7d5b">走路日</span><span class="c" style="--c:#9a9ab8">休息日</span><span>⚠ 胸闷</span><span>颜色浅＝没做完</span></div>
