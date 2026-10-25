@@ -140,6 +140,10 @@ details summary{font-weight:700;cursor:pointer}
 <div class="card">
   <details><summary>打卡记录表</summary>
     <div id="hist"></div>
+    <div id="histOps" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem">
+      <button id="selAll" style="background:#f3efe8">全选</button>
+      <button id="delSel" style="background:#f3e5e5;color:#a33">删除选中的记录</button>
+    </div>
     <button id="copy">复制记录（发给冬冬或医生）</button>
   </details>
 </div>
@@ -154,7 +158,8 @@ details summary{font-weight:700;cursor:pointer}
     <li><b>连续 3 次力量日都「轻松」或「刚好」才升一级</b>，而且一周最多升一级。慢慢来。</li>
     <li>「有点吃力」就保持不变；「胸闷了」，或者第二天早上一起来就胸口紧，就退一级，第二天休息。</li>
   </ul>
-  <button id="reset" style="background:#f3e5e5;color:#a33">清空所有记录重新开始</button>
+  <button id="reset" style="background:#f3e5e5;color:#a33">清空所有记录，从第 1 级重新开始</button>
+  <div class="mute" style="margin-top:.3rem">只想删某几天的记录：到上面「打卡记录表」里勾选删除，或者在日历上点那一天删除。</div>
   </details>
 </div>
 </main>
@@ -450,6 +455,8 @@ document.getElementById("save").onclick=()=>{
   if(!pick.fb){alert("选一下感觉");return;}
   const type=cur.type==="stop"?"rest":cur.type;
   const before=S.level; let msg=""; const comp=updateProg();
+  const prevLog=S.logs.find(x=>x.date===ymd());
+  const snap=prevLog&&prevLog.prev?prevLog.prev:{level:S.level,good:S.good,lastUp:S.lastUp,restOn:S.restOn};
   const doneList=exItems().filter(e=>e.querySelector("input").checked).map(e=>e.dataset.n);
   const allList=exItems().map(e=>e.dataset.n);
   const fb=pick.fb;
@@ -474,7 +481,7 @@ document.getElementById("save").onclick=()=>{
   } else msg=`<div class="good">记下了，今天辛苦了。</div>`;
   if(S.level<before && fb!=="tight") msg=`<div class="alert">早上胸口发紧，已退回第 ${S.level} 级。</div>`+msg;
   S.logs=S.logs.filter(x=>x.date!==ymd());
-  S.logs.push({date:ymd(),type,level:before,done:doneList,all:allList,sleep:pick.sleep,chest:pick.chest,fb,hr:hrIn(),note:document.getElementById("note").value.trim()});
+  S.logs.push({date:ymd(),type,level:before,done:doneList,all:allList,sleep:pick.sleep,chest:pick.chest,fb,hr:hrIn(),note:document.getElementById("note").value.trim(),prev:snap});
   save();
   result.innerHTML=msg+`<div class="mute">明天打开这个页面，从第 ① 步开始。</div>`;
   result.classList.remove("hide");
@@ -485,14 +492,31 @@ const hrIn=()=>{const v=document.getElementById("hr").value;return v?Number(v):n
 
 const TXT={good:"好",ok:"一般",bad:"差",pill:"安定",none:"松",mild:"有点紧",strong:"明显",easy:"轻松",hard:"吃力",tight:"胸闷",strength:"力量",walk:"走路",rest:"休息"};
 function renderHist(){
-  const rows=[...S.logs].reverse().slice(0,60).map(l=>`<tr><td>${l.date.slice(5)}</td><td>${TXT[l.type]}</td><td>${l.level}</td><td>${TXT[l.sleep]||""}</td><td>${TXT[l.chest]||""}</td><td>${l.fb==="ok"?"刚好":TXT[l.fb]}</td><td>${l.hr||""}</td></tr>`).join("");
-  hist.innerHTML=rows?`<table><tr><th>日期</th><th>类型</th><th>级</th><th>睡眠</th><th>练前</th><th>感觉</th><th>心率</th></tr>${rows}</table>`:`<div class="mute">还没有记录</div>`;
+  const rows=[...S.logs].sort((a,b)=>a.date<b.date?1:-1).map(l=>`<tr><td><input type="checkbox" class="hsel" value="${l.date}" style="width:1.2rem;height:1.2rem"></td><td>${l.date.slice(5)}</td><td>${TXT[l.type]}</td><td>${l.level}</td><td>${TXT[l.sleep]||""}</td><td>${TXT[l.chest]||""}</td><td>${l.fb==="ok"?"刚好":TXT[l.fb]}</td><td>${l.hr||""}</td></tr>`).join("");
+  histOps.style.display=rows?"grid":"none";
+  hist.innerHTML=rows?`<table><tr><th></th><th>日期</th><th>类型</th><th>级</th><th>睡眠</th><th>练前</th><th>感觉</th><th>心率</th></tr>${rows}</table>`:`<div class="mute">还没有记录</div>`;
 }
 copy.onclick=()=>{
   const t="运动记录\n"+S.logs.map(l=>`${l.date} ${TXT[l.type]} 第${l.level}级 睡眠${TXT[l.sleep]||"-"} 练前${TXT[l.chest]||"-"} 感觉${l.fb==="ok"?"刚好":TXT[l.fb]}${l.all?` 完成${l.done.length}/${l.all.length}`:""}${l.hr?" 心率"+l.hr:""}${l.note?" "+l.note:""}`).join("\n");
   navigator.clipboard?.writeText(t).then(()=>alert("已复制，去微信里粘贴就行"),()=>prompt("长按全选复制：",t));
 };
-reset.onclick=()=>{ if(confirm("确定清空所有记录？")){localStorage.removeItem(KEY);location.reload();} };
+reset.onclick=()=>{ if(confirm("确定清空所有记录？等级也会回到第 1 级。")){localStorage.removeItem(KEY);location.reload();} };
+// 删除某几天：删的如果包含最新一条，等级退回到那天练之前的状态；更早的记录删掉不影响等级
+function delLogs(dates){
+  if(!dates.length) return;
+  const md=d=>d.slice(5).replace("-","月")+"日";
+  const sorted=[...S.logs].sort((a,b)=>a.date<b.date?-1:1);
+  let roll=null;
+  for(let i=sorted.length-1;i>=0&&dates.includes(sorted[i].date);i--) if(sorted[i].prev) roll=sorted[i].prev;
+  const names=dates.length<=3?dates.map(md).join("、"):`${dates.length} 天`;
+  if(!confirm(`确定删除 ${names} 的记录？`+(roll&&roll.level!==S.level?`\n等级会退回到第 ${roll.level} 级（那天练之前的等级）。`:""))) return;
+  S.logs=S.logs.filter(x=>!dates.includes(x.date));
+  if(roll) Object.assign(S,roll);
+  if(dates.includes(ymd())){ S.today=null; result.classList.add("hide"); }
+  save(); renderLevel(); renderHist(); renderCal(); dayDetail.innerHTML="";
+}
+selAll.onclick=()=>{const bs=[...document.querySelectorAll(".hsel")];const all=bs.every(b=>b.checked);bs.forEach(b=>b.checked=!all);selAll.textContent=all?"全选":"取消全选";};
+delSel.onclick=()=>{const ds=[...document.querySelectorAll(".hsel:checked")].map(b=>b.value);if(!ds.length){alert("先在左边勾选要删的日期");return;}delLogs(ds);selAll.textContent="全选";};
 
 const voiceLabel=()=>voiceBtn.textContent=voiceOn()?"🔊 语音：开":"🔈 语音：关";
 const musicLabel=()=>{const m=musicMode();musicBtn.textContent=m==="on"?"🎵 音乐：古典":m==="own"?"🎶 音乐：放自己的歌":"🎵 音乐：关";
@@ -516,12 +540,13 @@ function renderCal(){
   }
   cal.innerHTML=h; calStat.textContent=`这个月打卡 ${cnt} 天。点日期看当天详情。`;
 }
+dayDetail.onclick=e=>{const b=e.target.closest(".delDay");if(b)delLogs([b.dataset.d]);};
 cal.onclick=e=>{
   const c=e.target.closest(".d[data-d]"); if(!c) return;
   const l=S.logs.find(x=>x.date===c.dataset.d), md=c.dataset.d.slice(5).replace("-","月")+"日";
   dayDetail.innerHTML=l?`<div class="good" style="margin-top:.6rem"><b>${md} · ${TXT[l.type]}日 · 第 ${l.level} 级</b><br>
     睡眠：${TXT[l.sleep]||"-"}　练前：${TXT[l.chest]||"-"}　练后：${l.fb==="ok"?"刚好":TXT[l.fb]}${l.hr?"　心率 "+l.hr:""}
-    ${l.all?`<br>完成 ${l.done.length}/${l.all.length}：${l.all.map(x=>(l.done.includes(x)?"✓":"✗")+x).join("　")}`:""}${l.note?"<br>备注："+l.note:""}</div>`
+    ${l.all?`<br>完成 ${l.done.length}/${l.all.length}：${l.all.map(x=>(l.done.includes(x)?"✓":"✗")+x).join("　")}`:""}${l.note?"<br>备注："+l.note:""}<br><button class="delDay" data-d="${l.date}" style="background:#f3e5e5;color:#a33;margin-top:.5rem;font-size:.85rem;padding:.4rem">删除这天的记录</button></div>`
    :`<div class="mute" style="margin-top:.6rem">${md}没有打卡</div>`;
 };
 calPrev.onclick=()=>{calM.setMonth(calM.getMonth()-1);renderCal();dayDetail.innerHTML="";};
