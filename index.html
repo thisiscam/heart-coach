@@ -495,7 +495,7 @@ copy.onclick=()=>{
 reset.onclick=()=>{ if(confirm("确定清空所有记录？")){localStorage.removeItem(KEY);location.reload();} };
 
 const voiceLabel=()=>voiceBtn.textContent=voiceOn()?"🔊 语音：开":"🔈 语音：关";
-const musicLabel=()=>{const m=musicMode();musicBtn.textContent=m==="on"?"🎵 音乐：民乐":m==="own"?"🎶 音乐：放自己的歌":"🎵 音乐：关";
+const musicLabel=()=>{const m=musicMode();musicBtn.textContent=m==="on"?"🎵 音乐：古典":m==="own"?"🎶 音乐：放自己的歌":"🎵 音乐：关";
   ownTip.style.display=m==="own"?"block":"none";musicCredit.style.display=m==="on"?"block":"none";};
 musicBtn.onclick=()=>{const m=musicMode();localStorage.setItem(KEY+"-music",m==="on"?"own":m==="own"?"off":"on");setSession();musicLabel();if(!musicOn())stopMusic();else if(run)startMusic(run.el.dataset.mode);};
 musicLabel();
