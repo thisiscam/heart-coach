@@ -38,6 +38,14 @@ svg.anim{display:block;width:100%;max-width:320px;margin:.4rem auto 0;background
 .tm.on{background:#fbe9e7}
 .tmv{font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
 .tmcue{min-height:1.4em;color:#555;font-size:1rem}
+.restbox{margin:.8rem 0 .2rem 1.4rem;padding:.6rem .8rem .4rem;border-left:5px solid #6c8ebf;background:#eef3fa;border-radius:.8rem}
+.resth{font-weight:700;color:#3d5a80;font-size:1rem}
+.resth small{font-weight:400;color:#667}
+.restbox svg.anim{max-width:220px;background:#e2eaf5}
+.restbox .tm{background:#fff}
+.restbox .tm.on{background:#dbe7f7}
+.restbox .tmgo{background:#6c8ebf}
+.anim .cup{fill:#6c8ebf}
 .tmbtns{display:grid;grid-template-columns:2fr 1fr;gap:.5rem}
 .tmbtns button{margin:.3rem 0 0;padding:.6rem}
 .tmgo{background:var(--acc)!important;color:#fff!important}
@@ -252,6 +260,8 @@ const CHAIR_BACK=`<path class="prop" d="M126 70V150M126 108H150V150M126 70h6"/>`
 const CHAIR_SEAT=x=>`<path class="prop" d="M${x} 60V105M${x} 105H${x+40}V150M${x} 105V150"/>`;
 const up=(p,dy)=>Object.fromEntries(Object.entries(p).map(([k,v])=>[k,[v[0],v[1]-dy]]));
 const STAND={H:[100,26],S:[100,40],P:[100,80],K:[100,112],A:[100,144],he:[96,150],to:[116,150],E:[110,60],W:[124,72]};
+const SEATED={H:[94,49],S:[92,63],P:[82,103],K:[118,103],A:[120,145],he:[116,150],to:[134,150],E:[104,82],W:[120,86]};
+const SIP={...SEATED,H:[92,47],E:[110,72],W:[104,54]};
 const ANIM={
   calf:fig([STAND,{...up(STAND,8),he:[102,143],to:[116,150],A:[104,136],W:[124,72]},STAND],4,CHAIR_BACK),
   sit:fig([
@@ -284,6 +294,8 @@ const ANIM={
     {H:[100,26],S:[100,40],P:[100,80],K:[110,112],A:[116,144],he:[112,150],to:[130,150],K2:[92,112],A2:[80,140],he2:[76,146],to2:[90,150],E:[90,60],W:[86,76],E2:[110,60],W2:[118,74]},
     {H:[100,26],S:[100,40],P:[100,80],K:[92,112],A:[80,140],he:[76,146],to:[90,150],K2:[110,112],A2:[116,144],he2:[112,150],to2:[130,150],E:[110,60],W:[118,74],E2:[90,60],W2:[86,76]},
     {H:[100,26],S:[100,40],P:[100,80],K:[110,112],A:[116,144],he:[112,150],to:[130,150],K2:[92,112],A2:[80,140],he2:[76,146],to2:[90,150],E:[90,60],W:[86,76],E2:[110,60],W2:[118,74]}],1.4),
+  rest:fig([SEATED,{...SEATED,S:[92,61],H:[94,47]},SEATED,SEATED,SIP,SIP,SEATED],9,CHAIR_SEAT(60).replace("M60 60V105","M60 50V105"),
+    (an,ps)=>`<rect class="cup" width="10" height="13" rx="2" x="${ps[0].W[0]-3}" y="${ps[0].W[1]-12}">${an("x",ps.map(p=>p.W[0]-3))}${an("y",ps.map(p=>p.W[1]-12))}</rect>`),
   breath:`<svg viewBox="0 0 200 160" class="anim"><line x1="0" y1="150.5" x2="200" y2="150.5" class="floor"/>${CHAIR_SEAT(60).replace("M60 60V105","M60 50V105")}
     <circle class="head" r="11" cx="84" cy="44"/><polyline class="body" points="82,58 80,103 116,104 120,145 116,150 134,150 120,145"/>
     <ellipse class="belly" cx="88" cy="88" rx="5" ry="10"><animate attributeName="rx" values="4;13;13;4" keyTimes="0;0.2105;0.5789;1" dur="19s" repeatCount="indefinite"/></ellipse>
@@ -397,7 +409,7 @@ document.addEventListener("click",e=>{
 });
 
 function exHTML(k,val,i){
-  return `<div class="ex" data-k="${k}" data-n="${NAME[k]}"><label><input type="checkbox"><div><b>${NAME[k]}</b> &nbsp;${val}</div></label>${ANIM[k]||""}<div class="how">${HOW[k]}</div>${TIMER(60,"rest","每组做完，点这里歇 1 分钟")}</div>`;
+  return `<div class="ex" data-k="${k}" data-n="${NAME[k]}"><label><input type="checkbox"><div><b>${NAME[k]}</b> &nbsp;${val}</div></label>${ANIM[k]||""}<div class="how">${HOW[k]}</div><div class="restbox"><div class="resth">☕ 组间休息 1 分钟 <small>（不是动作，不用打勾）</small></div>${ANIM.rest}<div class="how">每做完一组，坐下来歇一会儿，喝口水，慢慢呼吸。休息完再做下一组。</div>${TIMER(60,"rest","")}</div></div>`;
 }
 function walkHTML(min){
   return `<div class="ex" data-k="walk" data-n="慢走"><label><input type="checkbox"><div><b>慢走</b> &nbsp;${min} 分钟</div></label>${ANIM.walk}<div class="how">速度以「能说完整的句子、不憋气」为准，一觉得憋就放慢。</div>${TIMER(min*60,"walk","每过一分钟会响一下")}</div>`;
