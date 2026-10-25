@@ -51,6 +51,23 @@ table{width:100%;border-collapse:collapse;font-size:.85rem}
 td,th{padding:.35rem .2rem;border-bottom:1px solid var(--line);text-align:left}
 textarea,input[type=number]{font:inherit;width:100%;padding:.5rem;border-radius:.5rem;border:1px solid #ccc}
 .hide{display:none}
+.prog{position:sticky;top:0;z-index:3;background:#fff;padding:.5rem 0 .4rem;margin:.3rem 0}
+.progbar{height:.9rem;background:#eee;border-radius:.5rem;overflow:hidden}
+.progbar span{display:block;height:100%;width:0;background:var(--ok);transition:width .4s}
+#progTxt{font-weight:700;font-size:1rem;margin-top:.2rem}
+.ex.doneex>label b{text-decoration:line-through;color:var(--mute)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:.25rem;text-align:center}
+.cal .h{font-size:.8rem;color:var(--mute)}
+.cal .d{aspect-ratio:1;border-radius:.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.95rem;background:#f6f3ee;cursor:pointer}
+.cal .d.e{background:none;cursor:default}
+.cal .d.today{outline:2px solid var(--acc)}
+.cal .d.strength{background:#c0504d;color:#fff}.cal .d.walk{background:#2f7d5b;color:#fff}.cal .d.rest{background:#9a9ab8;color:#fff}
+.cal .d.part{opacity:.5}
+.cal .d i{font-style:normal;font-size:.7rem;line-height:1}
+.calnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem}
+.calnav button{width:auto;margin:0;padding:.3rem .9rem}
+.legend{display:flex;gap:.8rem;flex-wrap:wrap;font-size:.8rem;color:var(--mute);margin-top:.5rem}
+.legend span.c::before{content:"";display:inline-block;width:.8rem;height:.8rem;border-radius:.2rem;margin-right:.25rem;vertical-align:-1px;background:var(--c)}
 details summary{font-weight:700;cursor:pointer}
 </style></head><body><main>
 <h1>强心手册</h1>
@@ -83,6 +100,7 @@ details summary{font-weight:700;cursor:pointer}
   <h2>② 今天练这些 <span id="dayTag" class="tag"></span></h2>
   <div id="dayMsg"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem"><button id="voiceBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button><button id="musicBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button></div>
+  <div id="prog" class="prog"><div class="progbar"><span id="progFill"></span></div><div id="progTxt"></div></div>
   <div id="exList"></div>
   <div class="mute" style="margin-top:.6rem">每组之间坐下歇 1 分钟。动作要慢：2 秒上、2 秒下。全程用鼻子吸气、嘴呼气，<b>别憋气</b>。</div>
   <button class="pri" id="done">练完了，去反馈</button>
@@ -110,7 +128,15 @@ details summary{font-weight:700;cursor:pointer}
 </div>
 
 <div class="card">
-  <details><summary>打卡记录</summary>
+  <h2>打卡日历</h2>
+  <div class="calnav"><button id="calPrev">‹</button><b id="calTitle"></b><button id="calNext">›</button></div>
+  <div class="cal" id="cal"></div>
+  <div class="legend"><span class="c" style="--c:#c0504d">力量日</span><span class="c" style="--c:#2f7d5b">走路日</span><span class="c" style="--c:#9a9ab8">休息日</span><span>⚠ 胸闷</span><span>颜色浅＝没做完</span></div>
+  <div id="calStat" class="mute" style="margin-top:.4rem"></div>
+  <div id="dayDetail"></div>
+</div>
+<div class="card">
+  <details><summary>打卡记录表</summary>
     <div id="hist"></div>
     <button id="copy">复制记录（发给冬冬或医生）</button>
   </details>
@@ -354,7 +380,7 @@ function tick(){
     clearInterval(r.iv); run=null; keepAwake(false); el.classList.remove("on"); stopMusic();
     r.btn.textContent="▶ 开始"; el.dataset.used="0"; ding();
     if(mode==="rest"){cue.textContent="可以做下一组了";say("结束。休息好了，可以做下一组了");el.querySelector(".tmv").textContent=mmss(total);}
-    else{cue.textContent="完成 ✓";say(mode==="breath"?"结束。呼吸练习完成，做得很好":"结束。走完了，做得很好");const cb=el.closest(".ex")?.querySelector("input[type=checkbox]");if(cb)cb.checked=true;}
+    else{cue.textContent="完成 ✓";say(mode==="breath"?"结束。呼吸练习完成，做得很好":"结束。走完了，做得很好");const cb=el.closest(".ex")?.querySelector("input[type=checkbox]");if(cb&&!cb.checked){cb.checked=true;cb.dispatchEvent(new Event("change",{bubbles:true}));}}
   }
 }
 document.addEventListener("click",e=>{
@@ -380,19 +406,39 @@ document.addEventListener("click",e=>{
 });
 
 function exHTML(k,val,i){
-  return `<div class="ex"><label><input type="checkbox"><div><b>${NAME[k]}</b> &nbsp;${val}</div></label>${ANIM[k]||""}<div class="how">${HOW[k]}</div>${TIMER(60,"rest","每组做完，点这里歇 1 分钟")}</div>`;
+  return `<div class="ex" data-k="${k}" data-n="${NAME[k]}"><label><input type="checkbox"><div><b>${NAME[k]}</b> &nbsp;${val}</div></label>${ANIM[k]||""}<div class="how">${HOW[k]}</div>${TIMER(60,"rest","每组做完，点这里歇 1 分钟")}</div>`;
 }
 function walkHTML(min){
-  return `<div class="ex"><label><input type="checkbox"><div><b>慢走</b> &nbsp;${min} 分钟</div></label>${ANIM.walk}<div class="how">速度以「能说完整的句子、不憋气」为准，一觉得憋就放慢。</div>${TIMER(min*60,"walk","每过一分钟会响一下")}</div>`;
+  return `<div class="ex" data-k="walk" data-n="慢走"><label><input type="checkbox"><div><b>慢走</b> &nbsp;${min} 分钟</div></label>${ANIM.walk}<div class="how">速度以「能说完整的句子、不憋气」为准，一觉得憋就放慢。</div>${TIMER(min*60,"walk","每过一分钟会响一下")}</div>`;
 }
-const BREATH=`<div class="ex"><label><input type="checkbox"><div><b>4-7-8 呼吸放松</b> &nbsp;5 分钟</div></label>${ANIM.breath}<div class="how">靠坐或躺下，一只手放肚子上。用鼻子吸气 4 秒，肚子鼓起来；轻轻憋住气 7 秒；嘴巴慢慢呼气 8 秒，呼得越慢越好。跟着声音做，可以闭上眼睛。<br><b>憋气时如果胸口更紧、或者头晕，就别憋了，吸完直接慢慢呼。</b></div>${TIMER(304,"breath","")}</div>`;
+const BREATH=`<div class="ex" data-k="breath" data-n="呼吸放松"><label><input type="checkbox"><div><b>4-7-8 呼吸放松</b> &nbsp;5 分钟</div></label>${ANIM.breath}<div class="how">靠坐或躺下，一只手放肚子上。用鼻子吸气 4 秒，肚子鼓起来；轻轻憋住气 7 秒；嘴巴慢慢呼气 8 秒，呼得越慢越好。跟着声音做，可以闭上眼睛。<br><b>憋气时如果胸口更紧、或者头晕，就别憋了，吸完直接慢慢呼。</b></div>${TIMER(304,"breath","")}</div>`;
 
 let cur=null;
+function todayState(){ if(!S.today||S.today.date!==ymd()) S.today={date:ymd(),done:{}}; return S.today; }
+function exItems(){ return [...exList.querySelectorAll(".ex[data-k]:not([data-opt])")]; }
+function updateProg(){
+  const it=exItems(), n=it.filter(e=>e.querySelector("input").checked).length;
+  it.forEach(e=>e.classList.toggle("doneex",e.querySelector("input").checked));
+  progFill.style.width=(it.length?100*n/it.length:0)+"%";
+  progTxt.textContent=n===it.length&&n?`✓ 全部完成 ${n}/${it.length}，去下面点「练完了」`:`今天完成 ${n} / ${it.length} 项（做完一项就打个勾）`;
+  done.classList.toggle("pri",n===it.length);
+  return {n,total:it.length};
+}
+exList.addEventListener("change",e=>{
+  const ex=e.target.closest(".ex[data-k]"); if(!ex) return;
+  const t=todayState(); t.done[ex.dataset.k]=e.target.checked; save();
+  const {n,total}=updateProg();
+  if(e.target.checked&&n===total){ ding(); setTimeout(()=>done.scrollIntoView({behavior:"smooth",block:"center"}),600); }
+});
 go.onclick=()=>{
   if(!pick.sleep||!pick.chest){alert("两个问题都选一下");return;}
-  const p=plan(pick.sleep,pick.chest); cur=p;
-  step2.classList.remove("hide");
-  const i=S.level-1;
+  const p=plan(pick.sleep,pick.chest);
+  const t=todayState(); Object.assign(t,{plan:p,level:S.level,sleep:pick.sleep,chest:pick.chest,done:{}}); save();
+  showPlan(p,{}); step2.scrollIntoView({behavior:"smooth"});
+};
+function showPlan(p,doneMap){
+  cur=p; step2.classList.remove("hide");
+  const i=((S.today&&S.today.level)||S.level)-1;
   if(p.type==="stop"){
     dayTag.textContent="今天不练";dayTag.className="tag rest";
     dayMsg.innerHTML=`<div class="alert">现在明显发紧、心慌，今天别练了。先坐下做腹式呼吸。<br>如果<b>越来越重，或者休息 15 分钟不缓解</b>，打急救电话。<br>如果连着好几天都这样，告诉冬冬，去看一下心内科。</div>`;
@@ -400,7 +446,7 @@ go.onclick=()=>{
   } else if(p.type==="rest"){
     dayTag.textContent="恢复日";dayTag.className="tag rest";
     dayMsg.innerHTML=`<div class="good">${p.msg}</div>`;
-    exList.innerHTML=BREATH+walkHTML(10).replace("<b>慢走</b>","<b>（想动的话）慢走</b>");
+    exList.innerHTML=BREATH+walkHTML(10).replace("<b>慢走</b>","<b>（想动的话）慢走</b>").replace('data-k="walk"','data-k="walkopt" data-opt="1"');
   } else if(p.type==="walk"){
     dayTag.textContent="走路日";dayTag.className="tag walk";
     dayMsg.innerHTML=p.msg?`<div class="good">${p.msg}</div>`:"";
@@ -409,14 +455,18 @@ go.onclick=()=>{
   } else {
     dayTag.textContent="力量日";dayTag.className="tag";
     dayMsg.innerHTML="";
-    let h=walkHTML(8).replace("慢走","热身慢走");
+    let h=walkHTML(8).replace('data-k="walk" data-n="慢走"','data-k="warm" data-n="热身慢走"').replace("<b>慢走</b>","<b>热身慢走</b>");
     for(const k of ["calf","sit","wall","row","bridge","hop"]) if(LEVELS[k][i]) h+=exHTML(k,LEVELS[k][i]);
     exList.innerHTML=h+BREATH;
   }
-  step2.scrollIntoView({behavior:"smooth"});
-};
+  exItems().forEach(e=>{ if(doneMap&&doneMap[e.dataset.k]) e.querySelector("input").checked=true; });
+  updateProg();
+}
 
-done.onclick=()=>{ step3.classList.remove("hide"); step3.scrollIntoView({behavior:"smooth"}); };
+done.onclick=()=>{
+  const {n,total}=updateProg();
+  if(n<total&&!confirm(`还有 ${total-n} 项没打勾。\n没做完也可以反馈，但今天不算进升级。\n确定去反馈吗？`)) return;
+  step3.classList.remove("hide"); step3.scrollIntoView({behavior:"smooth"}); };
 
 document.querySelectorAll(".opts").forEach(g=>g.addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;
@@ -427,7 +477,9 @@ document.querySelectorAll(".opts").forEach(g=>g.addEventListener("click",e=>{
 document.getElementById("save").onclick=()=>{
   if(!pick.fb){alert("选一下感觉");return;}
   const type=cur.type==="stop"?"rest":cur.type;
-  const before=S.level; let msg="";
+  const before=S.level; let msg=""; const comp=updateProg();
+  const doneList=exItems().filter(e=>e.querySelector("input").checked).map(e=>e.dataset.n);
+  const allList=exItems().map(e=>e.dataset.n);
   const fb=pick.fb;
   if(pick.chest==="mild"||cur.type==="stop"){
     S.level=Math.max(1,S.level-1); S.good=0;
@@ -437,6 +489,8 @@ document.getElementById("save").onclick=()=>{
     msg=`<div class="alert">退回到第 ${S.level} 级，明天休息。现在坐下做腹式呼吸。如果休息 15 分钟还不缓解，或者越来越重，打急救电话。</div>`;
   } else if(fb==="hard"){
     S.good=0; msg=`<div class="good">保持第 ${S.level} 级，不加量。下次还是这个强度。</div>`;
+  } else if(type==="strength" && comp.n<comp.total){
+    msg=`<div class="good">今天做了 ${comp.n}/${comp.total} 项，记下了。没做完的这次不算进升级，也不扣分。</div>`;
   } else if(type==="strength"){
     S.good++;
     if(S.good>=3 && S.level<10 && (!S.lastUp||daysAgo(S.lastUp)>=7)){
@@ -448,12 +502,12 @@ document.getElementById("save").onclick=()=>{
   } else msg=`<div class="good">记下了，今天辛苦了。</div>`;
   if(S.level<before && fb!=="tight") msg=`<div class="alert">早上胸口发紧，已退回第 ${S.level} 级。</div>`+msg;
   S.logs=S.logs.filter(x=>x.date!==ymd());
-  S.logs.push({date:ymd(),type,level:before,sleep:pick.sleep,chest:pick.chest,fb,hr:hrIn(),note:document.getElementById("note").value.trim()});
+  S.logs.push({date:ymd(),type,level:before,done:doneList,all:allList,sleep:pick.sleep,chest:pick.chest,fb,hr:hrIn(),note:document.getElementById("note").value.trim()});
   save();
   result.innerHTML=msg+`<div class="mute">明天打开这个页面，从第 ① 步开始。</div>`;
   result.classList.remove("hide");
   [step2,step3].forEach(x=>x.classList.add("hide"));
-  renderLevel(); renderHist(); result.scrollIntoView({behavior:"smooth"});
+  S.today=null; save(); renderLevel(); renderHist(); renderCal(); result.scrollIntoView({behavior:"smooth"});
 };
 const hrIn=()=>{const v=document.getElementById("hr").value;return v?Number(v):null};
 
@@ -463,7 +517,7 @@ function renderHist(){
   hist.innerHTML=rows?`<table><tr><th>日期</th><th>类型</th><th>级</th><th>睡眠</th><th>练前</th><th>感觉</th><th>心率</th></tr>${rows}</table>`:`<div class="mute">还没有记录</div>`;
 }
 copy.onclick=()=>{
-  const t="运动记录\n"+S.logs.map(l=>`${l.date} ${TXT[l.type]} 第${l.level}级 睡眠${TXT[l.sleep]||"-"} 练前${TXT[l.chest]||"-"} 感觉${l.fb==="ok"?"刚好":TXT[l.fb]}${l.hr?" 心率"+l.hr:""}${l.note?" "+l.note:""}`).join("\n");
+  const t="运动记录\n"+S.logs.map(l=>`${l.date} ${TXT[l.type]} 第${l.level}级 睡眠${TXT[l.sleep]||"-"} 练前${TXT[l.chest]||"-"} 感觉${l.fb==="ok"?"刚好":TXT[l.fb]}${l.all?` 完成${l.done.length}/${l.all.length}`:""}${l.hr?" 心率"+l.hr:""}${l.note?" "+l.note:""}`).join("\n");
   navigator.clipboard?.writeText(t).then(()=>alert("已复制，去微信里粘贴就行"),()=>prompt("长按全选复制：",t));
 };
 reset.onclick=()=>{ if(confirm("确定清空所有记录？")){localStorage.removeItem(KEY);location.reload();} };
@@ -474,5 +528,39 @@ musicBtn.onclick=()=>{localStorage.setItem(KEY+"-music",musicOn()?"off":"on");mu
 musicLabel();
 voiceBtn.onclick=()=>{localStorage.setItem(KEY+"-voice",voiceOn()?"off":"on");voiceLabel();if(voiceOn())say("语音提示已打开");};
 voiceLabel();
-renderLevel(); renderHist();
+let calM=new Date(); calM.setDate(1);
+const WK=["日","一","二","三","四","五","六"];
+function renderCal(){
+  const y=calM.getFullYear(), m=calM.getMonth();
+  calTitle.textContent=`${y} 年 ${m+1} 月`;
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  let h=WK.map(w=>`<div class="h">${w}</div>`).join("")+"<div class='d e'></div>".repeat(first), cnt=0;
+  for(let d=1;d<=days;d++){
+    const ds=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`, l=S.logs.find(x=>x.date===ds);
+    if(l) cnt++;
+    const part=l&&l.all&&l.done&&l.done.length<l.all.length;
+    h+=`<div class="d ${l?l.type:""} ${part?"part":""} ${ds===ymd()?"today":""}" data-d="${ds}">${d}${l?`<i>${l.fb==="tight"?"⚠":"✓"}</i>`:""}</div>`;
+  }
+  cal.innerHTML=h; calStat.textContent=`这个月打卡 ${cnt} 天。点日期看当天详情。`;
+}
+cal.onclick=e=>{
+  const c=e.target.closest(".d[data-d]"); if(!c) return;
+  const l=S.logs.find(x=>x.date===c.dataset.d), md=c.dataset.d.slice(5).replace("-","月")+"日";
+  dayDetail.innerHTML=l?`<div class="good" style="margin-top:.6rem"><b>${md} · ${TXT[l.type]}日 · 第 ${l.level} 级</b><br>
+    睡眠：${TXT[l.sleep]||"-"}　练前：${TXT[l.chest]||"-"}　练后：${l.fb==="ok"?"刚好":TXT[l.fb]}${l.hr?"　心率 "+l.hr:""}
+    ${l.all?`<br>完成 ${l.done.length}/${l.all.length}：${l.all.map(x=>(l.done.includes(x)?"✓":"✗")+x).join("　")}`:""}${l.note?"<br>备注："+l.note:""}</div>`
+   :`<div class="mute" style="margin-top:.6rem">${md}没有打卡</div>`;
+};
+calPrev.onclick=()=>{calM.setMonth(calM.getMonth()-1);renderCal();dayDetail.innerHTML="";};
+calNext.onclick=()=>{calM.setMonth(calM.getMonth()+1);renderCal();dayDetail.innerHTML="";};
+renderLevel(); renderHist(); renderCal();
+if(S.today&&S.today.date===ymd()&&S.today.plan){
+  pick.sleep=S.today.sleep; pick.chest=S.today.chest;
+  document.querySelector(`[data-q=sleep] [data-v=${pick.sleep}]`)?.classList.add("on");
+  document.querySelector(`[data-q=chest] [data-v=${pick.chest}]`)?.classList.add("on");
+  showPlan(S.today.plan,S.today.done);
+} else if(S.logs.some(x=>x.date===ymd())){
+  result.innerHTML=`<div class="good">✓ 今天已经打过卡了，好好休息。想重新记，从第 ① 步再来一遍会覆盖今天的记录。</div>`;
+  result.classList.remove("hide");
+}
 </script></body></html>
