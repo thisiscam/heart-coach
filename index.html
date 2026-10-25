@@ -100,6 +100,7 @@ details summary{font-weight:700;cursor:pointer}
   <h2>② 今天练这些 <span id="dayTag" class="tag"></span></h2>
   <div id="dayMsg"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem"><button id="voiceBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button><button id="musicBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button></div>
+  <div style="font-size:.72rem;color:#999;margin-top:.3rem">音乐：呼吸《二泉映月》· 走路《雨打芭蕉》· 休息《连环扣》，Zhang Peijian 演奏（Wikimedia Commons，CC BY-SA 4.0）</div>
   <div id="prog" class="prog"><div class="progbar"><span id="progFill"></span></div><div id="progTxt"></div></div>
   <div id="exList"></div>
   <div class="mute" style="margin-top:.6rem">每组之间坐下歇 1 分钟。动作要慢：2 秒上、2 秒下。全程用鼻子吸气、嘴呼气，<b>别憋气</b>。</div>
@@ -309,49 +310,15 @@ async function keepAwake(on){
   try{ if(on&&navigator.wakeLock&&!wake) wake=await navigator.wakeLock.request("screen");
        if(!on&&wake){wake.release();wake=null;} }catch(e){}
 }
-// ---------- 背景音乐（公版老歌旋律，八音盒音色） ----------
+// ---------- 背景音乐（真人民乐演奏录音，CC BY-SA 4.0，Wikimedia Commons） ----------
+// 呼吸：二泉映月（二胡）  走路：雨打芭蕉（高胡，广东音乐）  组间休息：连环扣（高胡，广东音乐）
+// 录音：Zhang Peijian 演奏，David290 录制，https://commons.wikimedia.org/wiki/User:David290
 const musicOn=()=>localStorage.getItem(KEY+"-music")!=="off";
-const SONGS={
-  // 送别（李叔同词）——呼吸用，慢
-  breath:{name:"送别",bpm:60,vol:.06,notes:"5/1 3/.5 5/.5 1'/2 6/1 1'/1 5/2 5/1 1/.5 2/.5 3/1 2/.5 1/.5 2/4 5/1 3/.5 5/.5 1'/1.5 7/.5 6/1 1'/1 5/2 5/1 2/.5 3/.5 4/1.5 7,/.5 1/4 6/1 1'/1 1'/2 7/1 6/.5 7/.5 1'/2 6/.5 7/.5 1'/.5 6/.5 6/.5 5/.5 3/.5 1/.5 2/4 5/1 3/.5 5/.5 1'/1.5 7/.5 6/1 1'/1 5/2 5/1 2/.5 3/.5 4/1.5 7,/.5 1/4 0/2"},
-  // 茉莉花——走路用
-  walk:{name:"茉莉花",bpm:66,vol:.07,notes:"3/.5 3/.25 5/.25 6/.25 1'/.25 1'/.25 6/.25 5/.5 5/.25 6/.25 5/1 3/.5 3/.25 5/.25 6/.25 1'/.25 1'/.25 6/.25 5/.5 5/.25 6/.25 5/1 5/.5 5/.5 5/.5 3/.25 5/.25 6/.5 6/.5 5/1 3/.5 2/.25 3/.25 5/.5 5/.25 3/.25 2/.5 2/.25 1/.25 2/1 0/1"},
-  // 友谊地久天长——组间休息用
-  rest:{name:"友谊地久天长",bpm:80,vol:.07,notes:"5,/1 1/1.5 1/.5 1/1 3/1 2/1.5 1/.5 2/1 3/1 1/1.5 1/.5 3/1 5/1 6/3 6/1 5/1.5 3/.5 3/1 1/1 2/1.5 1/.5 2/1 3/1 1/1.5 6,/.5 6,/1 5,/1 1/3 6/1 5/1.5 3/.5 3/1 1/1 2/1.5 1/.5 2/1 6/1 5/1.5 3/.5 3/1 5/1 6/3 1'/1 5/1.5 3/.5 3/1 1/1 2/1.5 1/.5 2/1 3/1 1/1.5 6,/.5 6,/1 5,/1 1/3"},
-};
-const DEG={1:0,2:2,3:4,4:5,5:7,6:9,7:11};
-const parse=str=>str.split(" ").map(t=>{const [n,b]=t.split("/");const d=n[0];
-  if(d==="0") return [0,+b];
-  const oct=(n.includes("'")?12:0)-(n.includes(",")?12:0);
-  return [349.23*Math.pow(2,(DEG[d]+oct)/12),+b];});
 let mus=null;
-// iPhone 静音键会把 Web Audio 静音；改成先把旋律渲染成音频文件，用 <audio> 播放（不受静音键影响，锁屏也能继续）
+// 用 <audio> 播放（不受 iPhone 静音键影响，锁屏也能继续）；音量已在文件里压低，iPhone 不能用 JS 调音量
 try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
 const TRACKS={};
-function wavBlob(buf){
-  const d=buf.getChannelData(0), n=d.length, sr=buf.sampleRate, ab=new ArrayBuffer(44+n*2), v=new DataView(ab);
-  const w=(o,str)=>{for(let i=0;i<str.length;i++)v.setUint8(o+i,str.charCodeAt(i))};
-  w(0,"RIFF");v.setUint32(4,36+n*2,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
-  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,n*2,true);
-  for(let i=0;i<n;i++){const x=Math.max(-1,Math.min(1,d[i]));v.setInt16(44+i*2,x*32767,true);}
-  return new Blob([ab],{type:"audio/wav"});
-}
-async function renderSong(k){
-  const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext; if(!OC) return;
-  const sg=SONGS[k], notes=parse(sg.notes), spb=60/sg.bpm, sr=22050;
-  const total=notes.reduce((x,y)=>x+y[1],0)*spb;
-  const oc=new OC(1,Math.ceil(total*sr),sr); let t=0;
-  for(const [f,b] of notes){ const d=b*spb;
-    if(f){ const o=oc.createOscillator(),o2=oc.createOscillator(),g=oc.createGain();
-      o.type="triangle";o.frequency.value=f;o2.type="sine";o2.frequency.value=f*2;
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+Math.max(.4,d*1.1));
-      o.connect(g);o2.connect(g);g.connect(oc.destination);o.start(t);o2.start(t);o.stop(Math.min(total,t+d*1.2+.1));o2.stop(Math.min(total,t+d*1.2+.1)); }
-    t+=d; }
-  const buf=await oc.startRendering();
-  const au=new Audio(URL.createObjectURL(wavBlob(buf))); au.loop=true; au.preload="auto"; TRACKS[k]=au;
-  if(run&&run.el.dataset.mode===k&&musicOn()&&!mus) startMusic(k,true);
-}
-Object.keys(SONGS).forEach(k=>renderSong(k).catch(()=>{}));
+["breath","walk","rest"].forEach(k=>{const au=new Audio("music/m_"+k+".mp3");au.loop=true;au.preload="auto";TRACKS[k]=au;});
 function startMusic(mode,fresh){
   stopMusic(); const au=TRACKS[mode]; if(!au||!musicOn()) return;
   if(fresh) au.currentTime=0;
