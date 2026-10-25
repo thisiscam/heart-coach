@@ -100,7 +100,8 @@ details summary{font-weight:700;cursor:pointer}
   <h2>② 今天练这些 <span id="dayTag" class="tag"></span></h2>
   <div id="dayMsg"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem"><button id="voiceBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button><button id="musicBtn" style="background:#f3efe8;font-size:.85rem;padding:.45rem"></button></div>
-  <div style="font-size:.72rem;color:#999;margin-top:.3rem">音乐：呼吸《二泉映月》· 走路《雨打芭蕉》· 休息《连环扣》，Zhang Peijian 演奏（Wikimedia Commons，CC BY-SA 4.0）</div>
+  <div id="ownTip" style="display:none;background:#fff6e0;border-radius:8px;padding:.5rem .6rem;margin-top:.4rem;font-size:.9rem">🎶 <b>放自己喜欢的歌：</b>先打开 QQ音乐 或 网易云，放邓丽君、粉红的回忆这些老歌，再切回这个页面点「开始」。计时的提示语音照常会说，说话时歌声会自动小一点。</div>
+  <div id="musicCredit" style="font-size:.72rem;color:#999;margin-top:.3rem">音乐：呼吸《二泉映月》· 走路《雨打芭蕉》· 休息《连环扣》，Zhang Peijian 演奏（Wikimedia Commons，CC BY-SA 4.0）</div>
   <div id="prog" class="prog"><div class="progbar"><span id="progFill"></span></div><div id="progTxt"></div></div>
   <div id="exList"></div>
   <div class="mute" style="margin-top:.6rem">每组之间坐下歇 1 分钟。动作要慢：2 秒上、2 秒下。全程用鼻子吸气、嘴呼气，<b>别憋气</b>。</div>
@@ -313,10 +314,13 @@ async function keepAwake(on){
 // ---------- 背景音乐（真人民乐演奏录音，CC BY-SA 4.0，Wikimedia Commons） ----------
 // 呼吸：二泉映月（二胡）  走路：雨打芭蕉（高胡，广东音乐）  组间休息：连环扣（高胡，广东音乐）
 // 录音：Zhang Peijian 演奏，David290 录制，https://commons.wikimedia.org/wiki/User:David290
-const musicOn=()=>localStorage.getItem(KEY+"-music")!=="off";
+const musicMode=()=>{const m=localStorage.getItem(KEY+"-music");return m==="off"||m==="own"?m:"on";};
+const musicOn=()=>musicMode()==="on";
+// 放自己的歌时用 transient：页面的提示语音只把别的 App 的音乐压低，不打断它
+function setSession(){try{if(navigator.audioSession)navigator.audioSession.type=musicMode()==="own"?"transient":"playback";}catch(e){}}
 let mus=null;
 // 用 <audio> 播放（不受 iPhone 静音键影响，锁屏也能继续）；音量已在文件里压低，iPhone 不能用 JS 调音量
-try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){}
+setSession();
 const TRACKS={};
 ["breath","walk","rest"].forEach(k=>{const au=new Audio("music/m_"+k+".mp3");au.loop=true;au.preload="auto";TRACKS[k]=au;});
 function startMusic(mode,fresh){
@@ -490,8 +494,9 @@ copy.onclick=()=>{
 reset.onclick=()=>{ if(confirm("确定清空所有记录？")){localStorage.removeItem(KEY);location.reload();} };
 
 const voiceLabel=()=>voiceBtn.textContent=voiceOn()?"🔊 语音：开":"🔈 语音：关";
-const musicLabel=()=>musicBtn.textContent=musicOn()?"🎵 音乐：开":"🎵 音乐：关";
-musicBtn.onclick=()=>{localStorage.setItem(KEY+"-music",musicOn()?"off":"on");musicLabel();if(!musicOn())stopMusic();else if(run)startMusic(run.el.dataset.mode);};
+const musicLabel=()=>{const m=musicMode();musicBtn.textContent=m==="on"?"🎵 音乐：民乐":m==="own"?"🎶 音乐：放自己的歌":"🎵 音乐：关";
+  ownTip.style.display=m==="own"?"block":"none";musicCredit.style.display=m==="on"?"block":"none";};
+musicBtn.onclick=()=>{const m=musicMode();localStorage.setItem(KEY+"-music",m==="on"?"own":m==="own"?"off":"on");setSession();musicLabel();if(!musicOn())stopMusic();else if(run)startMusic(run.el.dataset.mode);};
 musicLabel();
 voiceBtn.onclick=()=>{localStorage.setItem(KEY+"-voice",voiceOn()?"off":"on");voiceLabel();if(voiceOn())say("语音提示已打开");};
 voiceLabel();
