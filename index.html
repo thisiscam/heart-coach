@@ -106,7 +106,7 @@ details summary{font-weight:700;cursor:pointer}
     <option value="own">🎶 放自己的歌</option><option value="off">🔇 音乐：关</option></select></div>
   <div id="ownTip" style="display:none;background:#fff6e0;border-radius:8px;padding:.5rem .6rem;margin-top:.4rem;font-size:.9rem">🎶 <b>放自己喜欢的歌：</b>先打开 QQ音乐 或 网易云，放邓丽君、粉红的回忆这些老歌，再切回这个页面点「开始」。计时的提示语音照常会说，说话时歌声会自动小一点。</div>
   <div id="musicCredit" style="font-size:.72rem;color:#999;margin-top:.3rem"></div>
-  <div id="prog" class="prog"><div class="progbar"><span id="progFill"></span></div><div id="progTxt"></div></div>
+  <div id="prog" class="prog"><div class="progbar"><span id="progFill"></span></div><div id="progTxt"></div><div id="nowPlaying" style="font-size:.75rem;color:#888"></div></div>
   <div id="exList"></div>
   <div class="mute" style="margin-top:.6rem">每组之间坐下歇 1 分钟。动作要慢：2 秒上、2 秒下。全程用鼻子吸气、嘴呼气，<b>别憋气</b>。</div>
   <button class="pri" id="done">练完了，去反馈</button>
@@ -322,16 +322,10 @@ async function keepAwake(on){
 }
 // ---------- 背景音乐（都是可以公开使用的真实录音） ----------
 // 每种风格：walk 走路、rest 组间休息、breath 呼吸（没有就用抒情的钢琴曲，呼吸时要安静）
-const GENRES={
-  classic:{name:"经典",walk:"拉德茨基进行曲",rest:"卡农",breath:"Gymnopédie 第一号"},
-  lyric:{name:"抒情",walk:"Sunshine",rest:"Dreamer",breath:"Meditation Impromptu"},
-  pop:{name:"流行",walk:"Carefree",rest:"Easy Lemon"},
-  rock:{name:"摇滚",walk:"Happy Bee",rest:"Twisted"},
-  country:{name:"乡村",walk:"Bama Country",rest:"Drankin Song"},
-  rap:{name:"说唱（伴奏）",walk:"Galactic Rap",rest:"Dream Catcher"},
-  opera:{name:"美声",walk:"卡鲁索《舞曲》La Danza",rest:"卡鲁索《绿树成荫》Ombra mai fu",breath:"卡鲁索《绿树成荫》Ombra mai fu"},
-  musical:{name:"音乐剧",walk:"《彭赞斯的海盗》A rollicking band of pirates",rest:"《彭赞斯的海盗》Ah, leave me not to pine"},
-};
+// 曲库：每种风格 walk 走路 / rest 组间休息 / breath 呼吸，各有几首；每次开始随机挑，放完自动换一首
+const POOLS={"classic":{"walk":[{"f":"classic_walk_0.mp3","n":"拉德茨基进行曲"},{"f":"classic_walk_1.mp3","n":"羊儿可以安心吃草（巴赫）"},{"f":"classic_walk_3.mp3","n":"嬉游曲 K131（莫扎特）"}],"rest":[{"f":"classic_rest_0.mp3","n":"卡农"},{"f":"classic_rest_1.mp3","n":"卡农（竖琴版）"},{"f":"classic_rest_2.mp3","n":"无伴奏大提琴组曲第一号前奏曲（巴赫）"},{"f":"classic_rest_3.mp3","n":"奇异恩典"}],"breath":[{"f":"classic_breath_0.mp3","n":"Gymnopédie 第一号（萨蒂）"},{"f":"classic_breath_1.mp3","n":"Gymnopédie 第二号（萨蒂）"},{"f":"classic_breath_2.mp3","n":"C 大调前奏曲（巴赫）"}]},"lyric":{"walk":[{"f":"lyric_walk_0.mp3","n":"Sunshine"},{"f":"lyric_walk_1.mp3","n":"Somewhere Sunny"},{"f":"lyric_walk_2.mp3","n":"Daily Beetle"},{"f":"lyric_walk_3.mp3","n":"Inspired"}],"rest":[{"f":"lyric_rest_0.mp3","n":"Dreamer"},{"f":"lyric_rest_1.mp3","n":"Last Kiss Goodnight"},{"f":"lyric_rest_2.mp3","n":"Touching Moments"},{"f":"lyric_rest_3.mp3","n":"Airship Serenity"}],"breath":[{"f":"lyric_breath_0.mp3","n":"Meditation Impromptu 1"},{"f":"lyric_breath_1.mp3","n":"Meditation Impromptu 2"},{"f":"lyric_breath_2.mp3","n":"Meditation Impromptu 3"}]},"pop":{"walk":[{"f":"pop_walk_0.mp3","n":"Carefree"},{"f":"pop_walk_1.mp3","n":"Wallpaper"},{"f":"pop_walk_2.mp3","n":"Life of Riley"},{"f":"pop_walk_3.mp3","n":"Kawai Kitsune"}],"rest":[{"f":"pop_rest_0.mp3","n":"Easy Lemon"},{"f":"pop_rest_1.mp3","n":"Eternity"},{"f":"pop_rest_2.mp3","n":"Chill Wave"}]},"rock":{"walk":[{"f":"rock_walk_0.mp3","n":"Happy Bee"},{"f":"rock_walk_1.mp3","n":"Sock Hop"},{"f":"rock_walk_2.mp3","n":"Funin and Sunin"},{"f":"rock_walk_3.mp3","n":"Surf Inspector"}],"rest":[{"f":"rock_rest_0.mp3","n":"Twisted"},{"f":"rock_rest_1.mp3","n":"Cold Funk"},{"f":"rock_rest_2.mp3","n":"Neo Western"}]},"country":{"walk":[{"f":"country_walk_0.mp3","n":"Bama Country"},{"f":"country_walk_1.mp3","n":"Still Pickin"},{"f":"country_walk_2.mp3","n":"Hillbilly Swing"},{"f":"country_walk_3.mp3","n":"River Valley Breakdown"}],"rest":[{"f":"country_rest_0.mp3","n":"Drankin Song"},{"f":"country_rest_1.mp3","n":"Fireflies and Stardust"},{"f":"country_rest_2.mp3","n":"Galway"}]},"rap":{"walk":[{"f":"rap_walk_0.mp3","n":"Galactic Rap"},{"f":"rap_walk_1.mp3","n":"Funky Chunk"},{"f":"rap_walk_2.mp3","n":"Funkorama"},{"f":"rap_walk_3.mp3","n":"Got Funk"}],"rest":[{"f":"rap_rest_0.mp3","n":"Dream Catcher"},{"f":"rap_rest_1.mp3","n":"ZigZag"},{"f":"rap_rest_2.mp3","n":"Shaving Mirror"}]},"opera":{"walk":[{"f":"opera_walk_0.mp3","n":"卡鲁索《舞曲》La Danza"},{"f":"opera_walk_1.mp3","n":"梅尔巴《玫瑰圆舞曲》Se saran rose"},{"f":"opera_walk_2.mp3","n":"梅尔巴《晨歌》Mattinata"},{"f":"opera_walk_3.mp3","n":"《卡门》哈巴涅拉"}],"rest":[{"f":"opera_rest_0.mp3","n":"卡鲁索《绿树成荫》Ombra mai fu"},{"f":"opera_rest_1.mp3","n":"卡鲁索与梅尔巴《波西米亚人》O soave fanciulla"},{"f":"opera_rest_2.mp3","n":"梅尔巴《小夜曲》La serenata"}],"breath":[{"f":"opera_breath_0.mp3","n":"卡鲁索《绿树成荫》Ombra mai fu"},{"f":"opera_breath_1.mp3","n":"梅尔巴《母亲教我的歌》（德沃夏克）"}]},"musical":{"walk":[{"f":"musical_walk_0.mp3","n":"《彭赞斯的海盗》A rollicking band of pirates"},{"f":"musical_walk_1.mp3","n":"《彭赞斯的海盗》少将之歌"},{"f":"musical_walk_2.mp3","n":"《彭赞斯的海盗》When the foeman bares his steel"},{"f":"musical_walk_3.mp3","n":"《彭赞斯的海盗》Climbing over rocky mountain"}],"rest":[{"f":"musical_rest_0.mp3","n":"《彭赞斯的海盗》Ah, leave me not to pine"},{"f":"musical_rest_1.mp3","n":"《彭赞斯的海盗》Poor wand'ring one"},{"f":"musical_rest_2.mp3","n":"《彭赞斯的海盗》Softly sighing to the river"}]}};
+const GNAME={classic:"经典",lyric:"抒情",pop:"流行",rock:"摇滚",country:"乡村",rap:"说唱",opera:"美声",musical:"音乐剧"};
+const GENRES=POOLS;
 const musicMode=()=>{const m=localStorage.getItem(KEY+"-music");return m==="off"||m==="own"||GENRES[m]?m:"classic";};
 const musicOn=()=>!!GENRES[musicMode()];
 // 放自己的歌时用 transient：页面的提示语音只把别的 App 的音乐压低，不打断它
@@ -339,19 +333,22 @@ function setSession(){try{if(navigator.audioSession)navigator.audioSession.type=
 let mus=null;
 // 用 <audio> 播放（不受 iPhone 静音键影响，锁屏也能继续）；音量已在文件里压低，iPhone 不能用 JS 调音量
 setSession();
-const TRACKS={};
-function track(mode){
-  const g=musicMode(); if(!GENRES[g]) return null;
-  const k=mode==="breath"&&!GENRES[g].breath?"lyric_breath":g+"_"+mode;
-  if(!TRACKS[k]){const au=new Audio("music/g_"+k+".mp3");au.loop=true;au.preload="auto";TRACKS[k]=au;}
-  return TRACKS[k];
+// 只用一个 <audio>，换曲子时改 src：iPhone 上第一次是点「开始」放的，之后自动换歌也不会被拦
+const musEl=new Audio(); musEl.preload="auto"; let musMode=null; const lastPick={};
+function pool(mode){ const g=POOLS[musicMode()]; return (g&&g[mode])||POOLS.lyric[mode]||[]; }
+function playPick(mode){
+  const p=pool(mode); if(!p.length) return; const key=musicMode()+mode;
+  let i=Math.floor(Math.random()*p.length); if(p.length>1&&i===lastPick[key]) i=(i+1)%p.length; lastPick[key]=i;
+  musEl.src="music/"+p[i].f; musEl.dataset.mode=mode; musEl.play().catch(()=>{});
+  musEl.dataset.name=p[i].n; nowPlaying.textContent="♪ 正在放："+p[i].n;
 }
+musEl.onended=()=>{ if(mus) playPick(musMode); };
 function startMusic(mode,fresh){
-  stopMusic(); if(!musicOn()) return; const au=track(mode); if(!au) return;
-  if(fresh) au.currentTime=0;
-  au.play().catch(()=>{}); mus=au;
+  stopMusic(); if(!musicOn()) return; musMode=mode; mus=musEl;
+  if(!fresh&&musEl.dataset.mode===mode&&musEl.dataset.genre===musicMode()&&musEl.src){ musEl.play().catch(()=>{}); nowPlaying.textContent="♪ 正在放："+musEl.dataset.name; }
+  else { musEl.dataset.genre=musicMode(); playPick(mode); }
 }
-function stopMusic(){ if(mus){mus.pause();mus=null;} }
+function stopMusic(){ if(mus){mus.pause();mus=null;} nowPlaying.textContent=""; }
 function stopRun(){ stopMusic(); if(run){clearInterval(run.iv);run.btn.textContent="▶ 继续";run.el.classList.remove("on");run=null;keepAwake(false);} }
 function tick(){
   const r=run, el=r.el, total=+el.dataset.sec;
@@ -539,9 +536,9 @@ const voiceLabel=()=>voiceBtn.textContent=voiceOn()?"🔊 语音：开":"🔈 �
 const musicLabel=()=>{const m=musicMode();musicSel.value=m;
   ownTip.style.display=m==="own"?"block":"none";
   const g=GENRES[m]; musicCredit.style.display=g?"block":"none";
-  if(g) musicCredit.innerHTML=`走路：${g.walk}　休息：${g.rest}　呼吸：${g.breath||"Meditation Impromptu（呼吸时统一放安静的钢琴）"}<br>`+
-    (m==="opera"||m==="musical"?"这是一百多年前的老唱片，有点沙沙声。":"")+
-    "录音来源：Kevin MacLeod（incompetech.com，CC BY 4.0）、美国海军陆战队乐团、Wikimedia Commons 公有领域老唱片";};
+  if(g) musicCredit.innerHTML=`${GNAME[m]}：走路 ${g.walk.length} 首、休息 ${g.rest.length} 首，每次随机放，放完自动换下一首。`+
+    (g.breath?"":"呼吸时统一放安静的钢琴曲。")+(m==="opera"||m==="musical"?"这是一百多年前的老唱片，有点沙沙声。":"")+
+    "<br>录音来源：Kevin MacLeod（incompetech.com，CC BY 4.0）、美国海军陆战队乐团、Wikimedia Commons 公有领域老唱片";};
 musicSel.onchange=()=>{localStorage.setItem(KEY+"-music",musicSel.value);setSession();musicLabel();stopMusic();if(musicOn()&&run)startMusic(run.el.dataset.mode,true);};
 musicLabel();
 voiceBtn.onclick=()=>{localStorage.setItem(KEY+"-voice",voiceOn()?"off":"on");voiceLabel();if(voiceOn())say("语音提示已打开");};
